@@ -1,5 +1,6 @@
 
 -- parallel universe typing simulator 2016
+-- or "keyboard warrior"
 
 -- TODO 
 -- make it so that you only use half of the keyboard 
@@ -7,6 +8,20 @@
 -- make it so that in each string you only hit a key once 
 -- key lights up once it's been hit 
 -- add a bar that fills up as you complete the word 
+
+-- the game will be like a 2D shootout type of thing 
+-- all particle effects will be gravity applied 
+-- when you get hit the damage number flies off you like a particle
+
+-- maybe have a set of letters 
+-- try to type as many as you can in the given time 
+-- more letters typed means a stronger attack 
+
+local GAME_STATES = {battle = "battle", walking = "walking", paused = "paused", title = "title"}
+local BATTLE_STATES = {attacking = "attacking", blocking = "blocking"}
+
+local gameState = GAME_STATES.title
+
 
 local keys = {}
 local keyToSwappedMap = {}
@@ -170,6 +185,7 @@ function drawKeyboard(_x, _y)
 end 
 
 function drawGame()
+	--love.graphics.scale(2)
 
 	local counter = 1
 	for c in currentWord:gmatch"." do
