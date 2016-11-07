@@ -6,6 +6,7 @@
 -- disable keys that aren't being used 
 -- make it so that in each string you only hit a key once 
 -- key lights up once it's been hit 
+-- add a bar that fills up as you complete the word 
 
 local keys = {}
 local keyToSwappedMap = {}
