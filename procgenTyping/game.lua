@@ -1,6 +1,12 @@
 
 -- parallel universe typing simulator 2016
 
+-- TODO 
+-- make it so that you only use half of the keyboard 
+-- disable keys that aren't being used 
+-- make it so that in each string you only hit a key once 
+-- key lights up once it's been hit 
+
 local keys = {}
 local keyToSwappedMap = {}
 local swappedToKeyMap = {}
@@ -9,9 +15,12 @@ local topRow = "qwertyuiop"
 local secondRow = "asdfghjkl"
 local thirdRow = "zxcvbnm"
  
-local currentWord = "cattle"
+local currentWord = "attack"
 local currentWordIndex = 1
 local win = false 
+
+local currentWordTimer = 0
+
 
 -- key press callback
 function love.keypressed(key)
@@ -92,7 +101,7 @@ end
 
 function loadGame()
 	newKeyboard()
-
+	currentWordTimer = Timer:new(13, TimerModes.single)
 end
 
 
@@ -101,10 +110,20 @@ function updateGame(dt)
 		newKeyboard()
 	end 
 
+	
+	if currentWordTimer:isComplete(dt) then 
+		love.event.quit()
+	end 
+	
 	if not win and getKeyDown(swappedToKeyMap[currentWord:sub(currentWordIndex,currentWordIndex)]) then 
 		currentWordIndex = currentWordIndex + 1 
 		if currentWordIndex > #currentWord then 
-			win = true 
+			--win = true 
+			--getKeyPress(swappedToKeyMap[currentWord:sub(currentWordIndex,currentWordIndex)])
+			currentWordIndex = 1
+			keys = {}
+			newKeyboard()
+			currentWordTimer = Timer:new(13, TimerModes.single)
 		end 
 	end 
 end
@@ -166,8 +185,11 @@ function drawGame()
 	drawKeyboard(100, 100)
 
 
-
-
+	local timerPercentComplete = currentWordTimer.timerValue / currentWordTimer.timerMax
+	
+	love.graphics.rectangle("line", 10, 10, 100, 20)
+	love.graphics.rectangle("fill", 10, 10, 100 - (100 * timerPercentComplete), 20)
+	
 	--[[love.graphics.origin()
 	love.graphics.push()
 		love.graphics.scale(camera.scale)		

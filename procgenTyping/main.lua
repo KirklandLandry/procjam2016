@@ -1,4 +1,5 @@
 require "framerateLock"
+require "timer"
 require "game" 
 
 -- this is the actual physical window size 
