@@ -2,68 +2,20 @@
 -- parallel universe typing simulator 2016
 
 local keys = {}
-local keyMap = {}
+local keyToSwappedMap = {}
+local swappedToKeyMap = {}
  
 local topRow = "qwertyuiop"
 local secondRow = "asdfghjkl"
 local thirdRow = "zxcvbnm"
  
-
-local camera = {
-	x = 0, 
-	y = 0,
-	vx = 0,
-	vy = 0,
-	acceleration = 100,
-	friction = 0.1,
-	scale = 0.5,
-	rotation = 0
-}
-
-
-local tileWidth = 30 
-local tileHeight = 30
-
-
-
-local map = {}
-
-
-local roomLayout = {
-	{1, 1, 0, 1, 1},
-	{1, 0, 0, 0, 1}, 
-	{0, 0, 0, 0, 0},
-	{1, 0, 0, 0, 1},
-	{1, 1, 0, 1, 1}
-}
-
-
-local roomWidth = #roomLayout[1]
-local roomHeight = #roomLayout
-local roomHeightPx = tileWidth * roomWidth
-local roomWidthPx = tileHeight * roomHeight
-
-local mapWidth = 5 * roomWidth + 1
-local mapHeight = 3 * roomHeight + 1
-
-local mapWidthInPx = roomWidthPx * mapWidth
-local mapHeightInPx = roomHeightPx * mapHeight
-
-local floorCol = {
-	r = 0,
-	b = 26,
-	g = 77
-}
-
-local wallCol = {
-	r = 255,
-	b = 255,
-	g = 55
-}
+local currentWord = "cattle"
+local currentWordIndex = 1
+local win = false 
 
 -- key press callback
 function love.keypressed(key)
-	print(key, string.byte(key), keyMap[key])
+	print(key, string.byte(key), keyToSwappedMap[key])
 	if key == "escape" then
 		love.event.quit() 		
 	end
@@ -85,6 +37,15 @@ function getKeyDown(key)
 	return false
 end
 
+function getSwappedKeyDown(key)
+	if not keys[key] then 
+		keys[key] = {down = false}
+	elseif keys[key].down then 
+		return true
+	end
+	return false
+end 
+
 -- checking if a key is pressed. key will be set as released once checked
 function getKeyPress(key)
 	if not keys[key] then 
@@ -96,12 +57,34 @@ function getKeyPress(key)
 	return false
 end
 
+function swap(array, index1, index2)
+    array[index1], array[index2] = array[index2], array[index1]
+end
+
+function shuffle(array, size)
+    local counter = string.byte("a")
+    while counter <= string.byte("z") do
+        local index = string.char(math.random(string.byte("a"), string.byte("z")))
+        swap(array, index, string.char(counter))
+        counter = counter + 1
+    end
+end
 
 function newKeyboard()
 	local current = string.byte("a")
-	keyMap = {}
+	
+	local letters = {}
 	while current <= string.byte("z") do
-		keyMap[string.char(current)] = string.char(love.math.random(string.byte("a"), string.byte("z")))
+		letters[string.char(current)] = string.char(current)--string.char(love.math.random(string.byte("a"), string.byte("z")))
+		current = current + 1
+	end 
+	shuffle(letters)
+
+	current = string.byte("a")
+	keyToSwappedMap = {}
+	while current <= string.byte("z") do
+		keyToSwappedMap[string.char(current)] = letters[string.char(current)] --string.char(current)--string.char(love.math.random(string.byte("a"), string.byte("z")))
+		swappedToKeyMap[letters[string.char(current)]] = string.char(current)
 		current = current + 1
 	end 
 end 
@@ -109,38 +92,6 @@ end
 
 function loadGame()
 	newKeyboard()
-
-
-
-
-	for yy=1,mapHeight do
-		for xx=1,mapWidth do
-
-			local rr 
-			local gg
-			local bb 
-			if math.fmod(yy - 1, roomHeight) == 0 or yy == mapHeight or 
-			math.fmod(xx - 1, roomWidth) == 0 or xx == mapWidth then 
-				rr = wallCol.r 
-				gg = wallCol.g 
-				bb = wallCol.b 
-			else 
-				rr = floorCol.r 
-				gg = floorCol.g 
-				bb = floorCol.b 
-			end 
-
-			map[mapWidth * yy + xx] = {
-				r = rr,
-				g = gg,
-				b = bb,
-				
-
-				x = xx, 
-				y = yy
-			}
-		end
-	end
 
 end
 
@@ -150,20 +101,12 @@ function updateGame(dt)
 		newKeyboard()
 	end 
 
-	if getKeyDown("up") then 
-		camera.y = camera.y - 10
-	elseif getKeyDown("down") then 
-		camera.y = camera.y + 10
+	if not win and getKeyDown(swappedToKeyMap[currentWord:sub(currentWordIndex,currentWordIndex)]) then 
+		currentWordIndex = currentWordIndex + 1 
+		if currentWordIndex > #currentWord then 
+			win = true 
+		end 
 	end 
-
-	if getKeyDown("left") then 
-		camera.x = camera.x - 10
-	elseif getKeyDown("right") then 
-		camera.x = camera.x + 10
-	end 
-
-	if getKeyDown("q") then camera.scale = camera.scale - dt end 
-	if getKeyDown("e") then camera.scale = camera.scale + dt end 
 end
 
 function colourSet(character)
@@ -175,15 +118,13 @@ function colourSet(character)
 end 
 
 
-
-
 function drawKey(character, x, y, keyboardTopLeft)	
 	love.graphics.setColor(0, 0, 200)
 	love.graphics.rectangle("fill", keyboardTopLeft.x + (20 * x) + (5*y), keyboardTopLeft.y + (20 * y), 20, 20)
 	love.graphics.setColor(0, 0, 150)
 	love.graphics.rectangle("line", keyboardTopLeft.x + (20 * x) + (5*y), keyboardTopLeft.y + (20 * y), 20, 20)
 	colourSet(character)
-	love.graphics.print(keyMap[character], keyboardTopLeft.x + (20 * x) + (5*y) + 5, keyboardTopLeft.y + (20 * y) + 5)	
+	love.graphics.print(keyToSwappedMap[character], keyboardTopLeft.x + (20 * x) + (5*y) + 5, keyboardTopLeft.y + (20 * y) + 5)	
 end 
 
 function drawKeyboard(_x, _y)
@@ -210,35 +151,28 @@ end
 
 function drawGame()
 
+	local counter = 1
+	for c in currentWord:gmatch"." do
+		if currentWordIndex <= counter then 
+			love.graphics.setColor(0, 255, 0)
+		else 
+			love.graphics.setColor(255, 100, 0)
+		end 
+		love.graphics.print(c, 50 + (counter * 10), 50)
+		counter = counter + 1
+	end
+
+
 	drawKeyboard(100, 100)
 
-	love.graphics.origin()
+
+
+
+	--[[love.graphics.origin()
 	love.graphics.push()
-
-		-- camera update
 		love.graphics.scale(camera.scale)		
-		--love.graphics.translate((screenWidth / 2), (screenHeight / 2))
-			love.graphics.translate((-camera.x), (-camera.y))	
-			--love.graphics.rotate(camera.rotation)
-			--love.graphics.scale(camera.scale)	
-		--love.graphics.translate((-screenWidth / 2), (-screenHeight / 2))
-	
-
-			
-
-
-		for y=1,mapHeight do
-			for x=1,mapWidth do 
-				if x * tileWidth >= camera.x and x * tileWidth < camera.x + roomWidthPx then 
-					love.graphics.setColor(map[mapWidth*y+x].r, map[mapWidth*y+x].g, map[mapWidth*y+x].b)
-					love.graphics.rectangle("fill", (map[mapWidth*y+x].x-1)*tileWidth, 
-													(map[mapWidth*y+x].y-1)*tileHeight, 
-													tileWidth, tileHeight)
-
-				end 
-			end 
-		end
-	love.graphics.pop()
+		love.graphics.translate((-camera.x), (-camera.y))	
+	love.graphics.pop()]]
 end
 
 
