@@ -1,6 +1,8 @@
 require "framerateLock"
 require "timer"
 require "game" 
+require "input"
+require "queue"
 
 -- this is the actual physical window size 
 screenWidth = nil
