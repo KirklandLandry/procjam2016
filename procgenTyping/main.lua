@@ -3,11 +3,14 @@ require "timer"
 require "game" 
 require "input"
 require "queue"
+require "scrollingElements"
 
 -- this is the actual physical window size 
 screenWidth = nil
 screenHeight = nil
 tileSize = 32
+-- this is where the floor will be drawn. just screen height - tile size 
+floorY = 0
 
 function love.load(arg)
 	math.randomseed(os.time())
@@ -16,6 +19,8 @@ function love.load(arg)
 	
 	screenWidth = love.graphics.getWidth()
 	screenHeight = love.graphics.getHeight()
+
+	floorY = screenHeight - tileSize
 	
 	loadGame()
 	loadFramerateLock()
