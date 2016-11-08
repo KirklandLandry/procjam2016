@@ -4,9 +4,9 @@ keyToSwappedMap = {}
 swappedToKeyMap = {}
 
 
-topRow = "qwertyuiop"
-secondRow = "asdfghjkl"
-thirdRow = "zxcvbnm"
+local topRow = "qwertyuiop"
+local secondRow = "asdfghjkl"
+local thirdRow = "zxcvbnm"
 
 -- key press callback
 function love.keypressed(key)
@@ -83,4 +83,45 @@ function newKeyboard()
 		swappedToKeyMap[letters[string.char(current)]] = string.char(current)
 		current = current + 1
 	end 
+end 
+
+
+function colourSet(character)
+	if getKeyDown(character) then 
+		love.graphics.setColor(255, 0, 0)
+	else 
+		love.graphics.setColor(255, 255, 255)
+	end 
+end 
+
+
+function drawKey(character, x, y, keyboardTopLeft)	
+	love.graphics.setColor(0, 0, 200)
+	love.graphics.rectangle("fill", keyboardTopLeft.x + (20 * x) + (5*y), keyboardTopLeft.y + (20 * y), 20, 20)
+	love.graphics.setColor(0, 0, 150)
+	love.graphics.rectangle("line", keyboardTopLeft.x + (20 * x) + (5*y), keyboardTopLeft.y + (20 * y), 20, 20)
+	colourSet(character)
+	love.graphics.print(keyToSwappedMap[character], keyboardTopLeft.x + (20 * x) + (5*y) + 5, keyboardTopLeft.y + (20 * y) + 5)	
+end 
+
+function drawKeyboard(_x, _y)
+	local keyboardTopLeft = { x = _x, y = _y }
+
+	local counter = 0
+	for c in topRow:gmatch"." do
+		drawKey(c, counter, 0, keyboardTopLeft)
+		counter = counter + 1
+	end
+
+	counter = 0
+	for c in secondRow:gmatch"." do
+		drawKey(c, counter, 1, keyboardTopLeft)
+		counter = counter + 1
+	end
+	
+	counter = 0
+	for c in thirdRow:gmatch"." do
+		drawKey(c,  counter, 2, keyboardTopLeft)
+		counter = counter + 1
+	end
 end 

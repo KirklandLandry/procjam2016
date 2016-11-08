@@ -23,28 +23,42 @@ local BATTLE_STATES = {attacking = "attacking", blocking = "blocking"}
 local gameState = GAME_STATES.title
 
 
- 
-
- 
 local currentWord = "attack"
 local currentWordIndex = 1
-local win = false 
 
 local currentWordTimer = 0
 
-local tileSize = 32
+local floorY = 0
 
 local scrollingQueues = {
 	floorTiles = nil 
 }
 
+function newScrollingElement(_x, _y)
+	return {
+		x = _x, 
+		y = _y,
+		r = math.random(10, 255),
+		g = math.random(10, 255),
+		b = math.random(10, 255)
+	}
+end
 
 
 function loadGame()
+	gameState = GAME_STATES.title
+
+	floorY = screenHeight - tileSize 
+
 	newKeyboard()
 	currentWordTimer = Timer:new(13, TimerModes.single)
 	
 	scrollingQueues.floorTiles = Queue:new()
+
+	for i=1,(screenWidth/tileSize) + 1 do
+		scrollingQueues.floorTiles:enqueue(newScrollingElement((i-1)*tileSize, floorY))
+	end
+
 end
 
 
@@ -52,17 +66,17 @@ function updateGame(dt)
 	if getKeyDown("tab") then 
 		newKeyboard()
 	end 
-
 	
 	if currentWordTimer:isComplete(dt) then 
-		love.event.quit()
+		--love.event.quit()
 	end 
+
+	updateBackground(dt)
+
 	
-	if not win and getKeyDown(swappedToKeyMap[currentWord:sub(currentWordIndex,currentWordIndex)]) then 
+	if getKeyDown(swappedToKeyMap[currentWord:sub(currentWordIndex,currentWordIndex)]) then 
 		currentWordIndex = currentWordIndex + 1 
 		if currentWordIndex > #currentWord then 
-			--win = true 
-			--getKeyPress(swappedToKeyMap[currentWord:sub(currentWordIndex,currentWordIndex)])
 			currentWordIndex = 1
 			keys = {}
 			newKeyboard()
@@ -71,48 +85,13 @@ function updateGame(dt)
 	end 
 end
 
-function colourSet(character)
-	if getKeyDown(character) then 
-		love.graphics.setColor(255, 0, 0)
-	else 
-		love.graphics.setColor(255, 255, 255)
-	end 
-end 
 
-
-function drawKey(character, x, y, keyboardTopLeft)	
-	love.graphics.setColor(0, 0, 200)
-	love.graphics.rectangle("fill", keyboardTopLeft.x + (20 * x) + (5*y), keyboardTopLeft.y + (20 * y), 20, 20)
-	love.graphics.setColor(0, 0, 150)
-	love.graphics.rectangle("line", keyboardTopLeft.x + (20 * x) + (5*y), keyboardTopLeft.y + (20 * y), 20, 20)
-	colourSet(character)
-	love.graphics.print(keyToSwappedMap[character], keyboardTopLeft.x + (20 * x) + (5*y) + 5, keyboardTopLeft.y + (20 * y) + 5)	
-end 
-
-function drawKeyboard(_x, _y)
-	local keyboardTopLeft = { x = _x, y = _y }
-
-	local counter = 0
-	for c in topRow:gmatch"." do
-		drawKey(c, counter, 0, keyboardTopLeft)
-		counter = counter + 1
-	end
-
-	counter = 0
-	for c in secondRow:gmatch"." do
-		drawKey(c, counter, 1, keyboardTopLeft)
-		counter = counter + 1
-	end
-	
-	counter = 0
-	for c in thirdRow:gmatch"." do
-		drawKey(c,  counter, 2, keyboardTopLeft)
-		counter = counter + 1
-	end
-end 
 
 function drawGame()
 	--love.graphics.scale(2)
+
+	drawBackground()
+
 
 	local counter = 1
 	for c in currentWord:gmatch"." do
@@ -134,11 +113,36 @@ function drawGame()
 	love.graphics.rectangle("line", 10, 10, 100, 20)
 	love.graphics.rectangle("fill", 10, 10, 100 - (100 * timerPercentComplete), 20)
 	
-	--[[love.graphics.origin()
-	love.graphics.push()
-		love.graphics.scale(camera.scale)		
-		love.graphics.translate((-camera.x), (-camera.y))	
-	love.graphics.pop()]]
 end
 
 
+function updateBackground(dt)
+	local frameScrollAmount = 90 * dt
+
+
+	-- scroll the floor tiles. always ensure the legnth stays the same 
+	local length = scrollingQueues.floorTiles:length()
+	for i=1,length do
+		local temp = scrollingQueues.floorTiles:dequeue()
+		temp.x = temp.x - frameScrollAmount 
+		if temp.x > -tileSize then 
+			scrollingQueues.floorTiles:enqueue(temp)
+		else 
+			scrollingQueues.floorTiles:enqueue(newScrollingElement((length*tileSize) + temp.x,floorY))
+		end 
+	end
+
+
+end 
+
+function drawBackground()
+	-- draw the floor tiles 
+	local length = scrollingQueues.floorTiles:length()
+	for i=1,length do
+		local temp = scrollingQueues.floorTiles:dequeue()
+		love.graphics.setColor(temp.r, temp.g, temp.b)
+		love.graphics.rectangle("fill", temp.x, temp.y, tileSize, tileSize)
+		scrollingQueues.floorTiles:enqueue(temp)
+	end
+
+end 

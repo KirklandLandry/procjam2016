@@ -7,7 +7,7 @@ require "queue"
 -- this is the actual physical window size 
 screenWidth = nil
 screenHeight = nil
-
+tileSize = 32
 
 function love.load(arg)
 	math.randomseed(os.time())
