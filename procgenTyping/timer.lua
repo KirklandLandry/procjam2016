@@ -30,3 +30,10 @@ end
 function Timer:reset()
 	self.timerValue = 0
 end
+
+-- draw a timer on screen 
+function Timer:draw(x, y, width, height)
+	local timerPercentComplete = self.timerValue / self.timerMax
+	love.graphics.rectangle("line", x, y, width, height)
+	love.graphics.rectangle("fill", x, y, width - (width * timerPercentComplete), height)
+end 

@@ -1,3 +1,4 @@
+
 local scrollingQueues = {
 	floorTiles = nil 
 }
@@ -22,8 +23,8 @@ function initBackground()
 	end
 end 
 
-function updateBackground(dt)
-	local frameScrollAmount = math.floor(90 * dt)
+function updateBackground(dt, scrollSpeed)
+	local frameScrollAmount = scrollSpeed
 
 
 	-- scroll the floor tiles. always ensure the legnth stays the same 

@@ -1,9 +1,13 @@
-
+-- key list containing if a key is pressed or not 
 local keys = {}
-keyToSwappedMap = {}
-swappedToKeyMap = {}
+-- map of actual key value -> randomized key value 
+local keyToSwappedMap = {}
+-- map of randomized key value -> actual key value 
+local swappedToKeyMap = {}
 
-
+-- just defining the keyboard layout 
+-- obviously won't work with non qwerty and non english keyboards 
+-- but I don't have anything else to test with and all I need is to get something that works for now 
 local topRow = "qwertyuiop"
 local secondRow = "asdfghjkl"
 local thirdRow = "zxcvbnm"
@@ -51,6 +55,11 @@ function getKeyPress(key)
 	end
 	return false
 end
+
+-- checking if the swapped letter pressed corresponds to a letter in the given word at the given index 
+function letterInWordPressed(wordToCheck, indexToCheck)
+	return getKeyPress(swappedToKeyMap[wordToCheck:sub(indexToCheck,indexToCheck)]) 
+end 
 
 
 function swap(array, index1, index2)

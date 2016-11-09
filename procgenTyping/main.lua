@@ -1,7 +1,7 @@
 require "framerateLock"
 require "timer"
 require "game" 
-require "input"
+require "keyboard"
 require "queue"
 require "scrollingElements"
 

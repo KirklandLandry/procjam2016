@@ -26,41 +26,63 @@ local gameState = GAME_STATES.title
 local currentWord = "attack"
 local currentWordIndex = 1
 
-local currentWordTimer = 0
+local currentWordTimer = nil
 
-
-
-
-
-
+local player = nil 
 
 function loadGame()
 	gameState = GAME_STATES.title
-
-	
 
 	newKeyboard()
 	currentWordTimer = Timer:new(13, TimerModes.single)
 	
 	initBackground()
 
+	player = {
+		x = -tileSize, 
+		y = floorY - tileSize,
+		width = tileSize,
+		height = tileSize,
+		r = math.random(22, 255),
+		g = math.random(22, 255),
+		b = math.random(22, 255)
+	}
 end
 
-
+-- BASE UPDATE 
 function updateGame(dt)	
-	if getKeyDown("tab") then 
-		newKeyboard()
+	if gameState == GAME_STATES.title then 
+		updateTitle(dt)
+	elseif gameState == GAME_STATES.walking then 
+		updateWalking(dt)
+	elseif gameState == GAME_STATES.battle then 
+		updateBattle(dt)
+	elseif gameState == GAME_STATES.paused then 
+		updatePaused(dt)
 	end 
-	
+end
+
+function updateTitle(dt)
+	if getKeyDown("r") then gameState = GAME_STATES.walking end 
+end 
+
+function updateWalking(dt)
+	updateBackground(dt, math.floor(140 * dt))
+	if player.x < tileSize * 2 then 
+		--player.x = player.x + dt * 80 
+		player.x = player.x + (((tileSize*2) - player.x ) * 0.07)
+	end 
+end 
+
+function updateBattle(dt)
 	if currentWordTimer:isComplete(dt) then 
 		--love.event.quit()
 	end 
 
-	updateBackground(dt)
-
-	
-	if getKeyDown(swappedToKeyMap[currentWord:sub(currentWordIndex,currentWordIndex)]) then 
+	-- check if the current letter in the current word was typed 
+	if letterInWordPressed(currentWord, currentWordIndex) then 
 		currentWordIndex = currentWordIndex + 1 
+		-- if the whole word was typed ...
 		if currentWordIndex > #currentWord then 
 			currentWordIndex = 1
 			keys = {}
@@ -68,35 +90,64 @@ function updateGame(dt)
 			currentWordTimer = Timer:new(13, TimerModes.single)
 		end 
 	end 
+end 
+
+function updatePaused(dt)
+
+end 
+
+-- BASE DRAW 
+function drawGame()
+	if gameState == GAME_STATES.title then 
+		drawTitle()
+	elseif gameState == GAME_STATES.walking then 
+		drawWalking()
+	elseif gameState == GAME_STATES.battle then 
+		drawBattle()
+	elseif gameState == GAME_STATES.paused then 
+		drawPaused()
+	end 
 end
 
+function drawTitle()
+	love.graphics.print("press r to start", screenWidth/2, screenHeight/2)
+end 
 
-
-function drawGame()
-	--love.graphics.scale(2)
-
+function drawWalking()
 	drawBackground()
+	drawPlayer()
+end 
+
+function drawBattle()
+	drawBackground()
+	drawPlayer()
+	drawWord(currentWord, currentWordIndex, 50, 50)
+	drawKeyboard(100, 100)
+	currentWordTimer:draw(10, 10, 100, 20)
+end 
 
 
+function drawPaused()
+
+end 
+
+
+function drawPlayer()
+	love.graphics.rectangle("fill", player.x, player.y, player.width, player.height)
+end 
+
+-- not super sure where to stick this 
+-- it draws a word based on how much of the word has been typed 
+function drawWord(wordToDraw, lettersTyped, x, y)
 	local counter = 1
-	for c in currentWord:gmatch"." do
-		if currentWordIndex <= counter then 
+	for c in wordToDraw:gmatch"." do
+		if lettersTyped <= counter then 
 			love.graphics.setColor(0, 255, 0)
 		else 
 			love.graphics.setColor(255, 100, 0)
 		end 
-		love.graphics.print(c, 50 + (counter * 10), 50)
+		-- need to change this to sprite -> 10 becomes tileSize
+		love.graphics.print(c, x + (counter * 10), y)
 		counter = counter + 1
 	end
-
-
-	drawKeyboard(100, 100)
-
-
-	local timerPercentComplete = currentWordTimer.timerValue / currentWordTimer.timerMax
-	
-	love.graphics.rectangle("line", 10, 10, 100, 20)
-	love.graphics.rectangle("fill", 10, 10, 100 - (100 * timerPercentComplete), 20)
-	
-end
-
+end 
