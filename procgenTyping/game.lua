@@ -82,11 +82,16 @@ function updateTitle(dt)
 end 
 
 function updateWalking(dt)
-	updateBackground(dt, math.floor(140 * dt))
+	updateBackground(dt, math.floor(200 * dt))
 	if player.x < tileSize * 2 then 
 		--player.x = player.x + dt * 80 
 		player.x = player.x + (((tileSize*2) - player.x ) * 0.07)
 	end 
+
+	-- if an enemy is 4 tiles away then switch to battle mode
+	if enemyWithinRange(player.x, screenWidth * 0.6 ) then 
+		gameState:push(GAME_STATES.battle)
+	end
 end 
 
 function updateBattle(dt)

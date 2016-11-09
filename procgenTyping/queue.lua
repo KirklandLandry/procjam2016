@@ -3,8 +3,8 @@ function Queue:new ()
 	local o = {}
 	setmetatable(o, self)
 	self.__index = self
-	o.first = 0
-	o.last = -1
+	o.first = 1
+	o.last = 0
 	return o
 end
 -- enqueue / pushright
@@ -24,10 +24,13 @@ function Queue:dequeue ()
 	return value
 end
 
---[[function Queue:elementAt(index)
+function Queue:elementAt(index)
 	return self[index]
-end]]
+end
 
+function Queue:peek()
+	return self[self.first]
+end
 
 function Queue:isEmpty()
 	if self.first > self.last then 

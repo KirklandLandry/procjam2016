@@ -3,7 +3,7 @@ local scrollingQueues = {
 	floorTiles = nil 
 }
 
-local enemyList = {}
+local enemyList = nil
 
 local enemySpawnTimer = nil 
 
@@ -22,14 +22,18 @@ function newEnemy()
 		x = screenWidth,
 		y = floorY - tileSize,
 		width = tileSize,
-		height = tileSize
+		height = tileSize,
+		r = math.random(10, 255),
+		g = math.random(10, 255),
+		b = math.random(10, 255)
 	}
 end 
 
 function initBackground()
 	scrollingQueues.floorTiles = Queue:new()
+	enemyList = Queue:new()
 
-	enemySpawnTimer = Timer:new(math.random(3,6), TimerModes.repeating)
+	enemySpawnTimer = Timer:new(math.random(3,7), TimerModes.repeating)
 
 	for i=1,(screenWidth/tileSize) + 1 do
 		scrollingQueues.floorTiles:enqueue(newScrollingElement((i-1)*tileSize, floorY))
@@ -41,7 +45,7 @@ function updateBackground(dt, scrollSpeed)
 
 
 	if enemySpawnTimer:isComplete(dt) then 
-		table.insert(enemyList, newEnemy())
+		enemyList:enqueue(newEnemy())
 	end 
 
 	-- scroll the floor tiles. always ensure the legnth stays the same 
@@ -56,8 +60,8 @@ function updateBackground(dt, scrollSpeed)
 		end 
 	end
 
-	for i=1,#enemyList do
-		enemyList[i].x = enemyList[i].x - frameScrollAmount
+	for i=1,enemyList:length() do
+		enemyList:elementAt(i).x = enemyList:elementAt(i).x - frameScrollAmount
 	end
 
 
@@ -76,7 +80,16 @@ function drawBackground()
 end 
 
 function drawEnemies()
-	for i=1,#enemyList do
-		love.graphics.rectangle("fill", enemyList[i].x, enemyList[i].y, enemyList[i].width, enemyList[i].height)
+	for i=1,enemyList:length() do
+		love.graphics.setColor(enemyList:elementAt(i).r, enemyList:elementAt(i).g, enemyList:elementAt(i).b)
+		love.graphics.rectangle("fill", enemyList:elementAt(i).x, enemyList:elementAt(i).y, enemyList:elementAt(i).width, enemyList:elementAt(i).height)
 	end
 end 
+
+function enemyWithinRange(playerX, maxDistance)
+	if enemyList:length() > 0 and math.sqrt(math.pow(enemyList:peek().x, 2) - math.pow(playerX,2)) < maxDistance then
+		return true 
+	else 
+		return false 
+	end
+end
