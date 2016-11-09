@@ -20,7 +20,7 @@
 local GAME_STATES = {battle = "battle", walking = "walking", paused = "paused", title = "title"}
 local BATTLE_STATES = {attacking = "attacking", blocking = "blocking"}
 
-local gameState = GAME_STATES.title
+local gameState = nil
 
 
 local currentWord = "attack"
@@ -31,7 +31,8 @@ local currentWordTimer = nil
 local player = nil 
 
 function loadGame()
-	gameState = GAME_STATES.title
+	gameState = Stack:new()
+	gameState:push(GAME_STATES.title)
 
 	newKeyboard()
 	currentWordTimer = Timer:new(13, TimerModes.single)
@@ -51,19 +52,33 @@ end
 
 -- BASE UPDATE 
 function updateGame(dt)	
-	if gameState == GAME_STATES.title then 
+
+	print(gameState:peek())
+
+	if getKeyPress("escape") then 
+		love.event.quit()
+		if gameState:peek() == GAME_STATES.paused then 
+			gameState:pop()	
+		else 
+			gameState:push(GAME_STATES.paused)
+		end 
+	end 
+
+	if gameState:peek() == GAME_STATES.title then 
 		updateTitle(dt)
-	elseif gameState == GAME_STATES.walking then 
+	elseif gameState:peek() == GAME_STATES.walking then 
 		updateWalking(dt)
-	elseif gameState == GAME_STATES.battle then 
+	elseif gameState:peek() == GAME_STATES.battle then 
 		updateBattle(dt)
-	elseif gameState == GAME_STATES.paused then 
+	elseif gameState:peek() == GAME_STATES.paused then 
 		updatePaused(dt)
 	end 
 end
 
 function updateTitle(dt)
-	if getKeyDown("r") then gameState = GAME_STATES.walking end 
+	if getKeyDown("r") then 
+		gameState:push(GAME_STATES.walking)
+	end 
 end 
 
 function updateWalking(dt)
@@ -98,13 +113,14 @@ end
 
 -- BASE DRAW 
 function drawGame()
-	if gameState == GAME_STATES.title then 
+	love.graphics.setColor(255,255,255)
+	if gameState:peek() == GAME_STATES.title then 
 		drawTitle()
-	elseif gameState == GAME_STATES.walking then 
+	elseif gameState:peek() == GAME_STATES.walking then 
 		drawWalking()
-	elseif gameState == GAME_STATES.battle then 
+	elseif gameState:peek() == GAME_STATES.battle then 
 		drawBattle()
-	elseif gameState == GAME_STATES.paused then 
+	elseif gameState:peek() == GAME_STATES.paused then 
 		drawPaused()
 	end 
 end
@@ -128,11 +144,12 @@ end
 
 
 function drawPaused()
-
+	love.graphics.print("game paused", screenWidth/2, screenHeight/2)
 end 
 
 
 function drawPlayer()
+	love.graphics.setColor(player.r, player.g, player.b)
 	love.graphics.rectangle("fill", player.x, player.y, player.width, player.height)
 end 
 
@@ -151,3 +168,13 @@ function drawWord(wordToDraw, lettersTyped, x, y)
 		counter = counter + 1
 	end
 end 
+
+
+
+function love.focus(f)
+	if not f then
+		gameState:push(GAME_STATES.paused)
+	elseif gameState:peek() == GAME_STATES.paused then 
+		gameState:pop() 
+	end
+end

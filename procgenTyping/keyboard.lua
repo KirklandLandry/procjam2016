@@ -15,9 +15,6 @@ local thirdRow = "zxcvbnm"
 -- key press callback
 function love.keypressed(key)
 	print(key, string.byte(key), keyToSwappedMap[key])
-	if key == "escape" then
-		love.event.quit() 		
-	end
     keys[key] = {down = true} 
 end
 

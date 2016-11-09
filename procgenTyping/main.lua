@@ -4,7 +4,7 @@ require "game"
 require "keyboard"
 require "queue"
 require "scrollingElements"
-
+require "stack"
 -- this is the actual physical window size 
 screenWidth = nil
 screenHeight = nil
@@ -24,6 +24,11 @@ function love.load(arg)
 	
 	loadGame()
 	loadFramerateLock()
+
+	-- confine mouse to window
+	love.mouse.setGrabbed(true)
+	-- set mouse to invisible 
+	love.mouse.setVisible(false)
 end
 
 function love.update(dt)

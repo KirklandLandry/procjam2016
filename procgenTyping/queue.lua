@@ -24,6 +24,11 @@ function Queue:dequeue ()
 	return value
 end
 
+--[[function Queue:elementAt(index)
+	return self[index]
+end]]
+
+
 function Queue:isEmpty()
 	if self.first > self.last then 
 		return true
