@@ -30,6 +30,24 @@ local currentWordTimer = nil
 
 local player = nil 
 
+local particleList = {} 
+
+local gravity = 22
+
+-- the text is optional 
+-- will create normal particle otherwise 
+function newParticle(_x, _y, _vx, _vy, _lifespan, text)
+	return {
+		x = _x, 
+		y = _y, 
+		vx = _vx,
+		vy = _vy,
+		lifespan = _lifespan,
+		alpha = 255,
+		e = math.random(0.8, 0.83) -- elasticity 
+	}
+end 
+
 function loadGame()
 	gameState = Stack:new()
 	gameState:push(GAME_STATES.title)
@@ -83,9 +101,9 @@ end
 
 function updateWalking(dt)
 	updateBackground(dt, math.floor(200 * dt))
-	if player.x < tileSize * 2 then 
+	if player.x < tileSize * 5 then 
 		--player.x = player.x + dt * 80 
-		player.x = player.x + (((tileSize*2) - player.x ) * 0.07)
+		player.x = player.x + (((tileSize*5) - player.x ) * 0.07)
 	end 
 
 	-- if an enemy is 4 tiles away then switch to battle mode
@@ -93,6 +111,8 @@ function updateWalking(dt)
 		gameState:push(GAME_STATES.battle)
 	end
 end 
+
+local hit = false
 
 function updateBattle(dt)
 	if currentWordTimer:isComplete(dt) then 
@@ -110,6 +130,16 @@ function updateBattle(dt)
 			currentWordTimer = Timer:new(13, TimerModes.single)
 		end 
 	end 
+
+	if not hit  then 
+		for i=1,40 do
+			table.insert(particleList, newParticle(player.x, player.y, math.random(-10, -200), math.random(-250, -550), 3))
+		end
+
+		
+		hit = true 
+	end 
+	updateParticles(dt)
 end 
 
 function updatePaused(dt)
@@ -145,6 +175,7 @@ function drawBattle()
 	drawWord(currentWord, currentWordIndex, 50, 50)
 	drawKeyboard(100, 100)
 	currentWordTimer:draw(10, 10, 100, 20)
+	drawParticles()
 end 
 
 
@@ -181,5 +212,33 @@ function love.focus(f)
 		gameState:push(GAME_STATES.paused)
 	elseif gameState:peek() == GAME_STATES.paused then 
 		gameState:pop() 
+	end
+end
+
+function updateParticles(dt)
+	for i=#particleList,1,-1 do
+		particleList[i].x = particleList[i].x + (particleList[i].vx * dt)
+		
+		particleList[i].vy = (particleList[i].vy + gravity) 
+		particleList[i].y = particleList[i].y + (particleList[i].vy * dt)
+
+		if particleList[i].y > floorY then 
+			particleList[i].alpha = particleList[i].alpha* 0.75
+			particleList[i].y = floorY
+			particleList[i].vy = -particleList[i].vy * particleList[i].e
+		end
+
+		if particleList[i].alpha < 0 or particleList[i].lifespan <= 0 then 
+			table.remove(particleList, i)
+		else 
+			particleList[i].lifespan = particleList[i].lifespan - dt
+		end
+	end
+end
+
+function drawParticles()
+	for i=1,#particleList do
+		love.graphics.setColor(255, 255, 255, particleList[i].alpha)
+		love.graphics.circle("fill",particleList[i].x, particleList[i].y, 5) 
 	end
 end

@@ -33,7 +33,7 @@ function initBackground()
 	scrollingQueues.floorTiles = Queue:new()
 	enemyList = Queue:new()
 
-	enemySpawnTimer = Timer:new(math.random(3,7), TimerModes.repeating)
+	enemySpawnTimer = Timer:new(1, TimerModes.repeating)
 
 	for i=1,(screenWidth/tileSize) + 1 do
 		scrollingQueues.floorTiles:enqueue(newScrollingElement((i-1)*tileSize, floorY))
