@@ -73,6 +73,8 @@ function shuffle(array, size)
 end
 
 function newKeyboard()
+	keys = {}
+
 	local current = string.byte("a")
 	
 	local letters = {}

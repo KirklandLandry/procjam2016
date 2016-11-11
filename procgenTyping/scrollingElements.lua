@@ -25,7 +25,8 @@ function newEnemy()
 		height = tileSize,
 		r = math.random(10, 255),
 		g = math.random(10, 255),
-		b = math.random(10, 255)
+		b = math.random(10, 255),
+		health = 25
 	}
 end 
 
@@ -35,7 +36,7 @@ function initBackground()
 
 	enemySpawnTimer = Timer:new(1, TimerModes.repeating)
 
-	for i=1,(screenWidth/tileSize) + 1 do
+	for i=1,(screenWidth/tileSize) + 2 do
 		scrollingQueues.floorTiles:enqueue(newScrollingElement((i-1)*tileSize, floorY))
 	end
 end 
@@ -93,3 +94,16 @@ function enemyWithinRange(playerX, maxDistance)
 		return false 
 	end
 end
+
+function currentEnemyPosition()
+	return {x = enemyList:peek().x, y = enemyList:peek().y}
+end 
+
+function currentEnemyHealth()
+	return enemyList:peek().health
+end 
+
+function decreaseCurrentEnemyHealth(amount)
+	assert(type(amount) == "number", "decreaseCurrentEnemyHealth expects a number")
+	enemyList:peek().health = enemyList:peek().health - amount
+end 

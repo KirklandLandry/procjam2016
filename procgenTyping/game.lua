@@ -21,7 +21,7 @@ local GAME_STATES = {battle = "battle", walking = "walking", paused = "paused", 
 local BATTLE_STATES = {attacking = "attacking", blocking = "blocking"}
 
 local gameState = nil
-
+local battleState = nil
 
 local currentWord = "attack"
 local currentWordIndex = 1
@@ -36,7 +36,7 @@ local gravity = 22
 
 -- the text is optional 
 -- will create normal particle otherwise 
-function newParticle(_x, _y, _vx, _vy, _lifespan, text)
+function newParticle(_x, _y, _vx, _vy, _lifespan, _text)
 	return {
 		x = _x, 
 		y = _y, 
@@ -44,7 +44,8 @@ function newParticle(_x, _y, _vx, _vy, _lifespan, text)
 		vy = _vy,
 		lifespan = _lifespan,
 		alpha = 255,
-		e = math.random(0.8, 0.83) -- elasticity 
+		e = math.random(0.8, 0.83), -- elasticity 
+		text = _text or nil
 	}
 end 
 
@@ -53,7 +54,7 @@ function loadGame()
 	gameState:push(GAME_STATES.title)
 
 	newKeyboard()
-	currentWordTimer = Timer:new(13, TimerModes.single)
+	currentWordTimer = Timer:new(7, TimerModes.single)
 	
 	initBackground()
 
@@ -71,7 +72,7 @@ end
 -- BASE UPDATE 
 function updateGame(dt)	
 
-	print(gameState:peek())
+	--print(gameState:peek())
 
 	if getKeyPress("escape") then 
 		love.event.quit()
@@ -108,6 +109,7 @@ function updateWalking(dt)
 
 	-- if an enemy is 4 tiles away then switch to battle mode
 	if enemyWithinRange(player.x, screenWidth * 0.6 ) then 
+		battleState = BATTLE_STATES.attacking
 		gameState:push(GAME_STATES.battle)
 	end
 end 
@@ -117,28 +119,41 @@ local hit = false
 function updateBattle(dt)
 	if currentWordTimer:isComplete(dt) then 
 		--love.event.quit()
+		if battleState == BATTLE_STATES.attacking then 
+			battleState = BATTLE_STATES.blocking
+		elseif battleState == BATTLE_STATES.blocking then 
+			battleState = BATTLE_STATES.attacking
+		end 
+		newKeyboard()
+		currentWordTimer = Timer:new(7, TimerModes.single)
 	end 
 
 	-- check if the current letter in the current word was typed 
 	if letterInWordPressed(currentWord, currentWordIndex) then 
 		currentWordIndex = currentWordIndex + 1 
+
+		local hitDamage = math.random(1, 3)
+		table.insert(particleList, newParticle(currentEnemyPosition().x, currentEnemyPosition().y, math.random(100, 200), math.random(-250, -550), 3, tostring(hitDamage)))
+		decreaseCurrentEnemyHealth(hitDamage)
+		if currentEnemyHealth() <= 0 then 
+			gameState = GAME_STATES.walking
+		end 
+
 		-- if the whole word was typed ...
 		if currentWordIndex > #currentWord then 
 			currentWordIndex = 1
-			keys = {}
-			newKeyboard()
-			currentWordTimer = Timer:new(13, TimerModes.single)
+			--newKeyboard()
+			--currentWordTimer = Timer:new(13, TimerModes.single)
 		end 
 	end 
 
-	if not hit  then 
+	-- a particle test 
+	--[[if not hit  then 
 		for i=1,40 do
 			table.insert(particleList, newParticle(player.x, player.y, math.random(-10, -200), math.random(-250, -550), 3))
 		end
-
-		
 		hit = true 
-	end 
+	end ]]
 	updateParticles(dt)
 end 
 
@@ -239,6 +254,10 @@ end
 function drawParticles()
 	for i=1,#particleList do
 		love.graphics.setColor(255, 255, 255, particleList[i].alpha)
-		love.graphics.circle("fill",particleList[i].x, particleList[i].y, 5) 
+		if particleList[i].text then 
+			love.graphics.print(particleList[i].text, particleList[i].x, particleList[i].y, 0, 2, 2)
+		else 
+			love.graphics.circle("fill",particleList[i].x, particleList[i].y, 5) 
+		end 
 	end
 end
