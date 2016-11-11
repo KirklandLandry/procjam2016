@@ -65,7 +65,8 @@ function loadGame()
 		height = tileSize,
 		r = math.random(22, 255),
 		g = math.random(22, 255),
-		b = math.random(22, 255)
+		b = math.random(22, 255),
+		baseAttack = 3
 	}
 end
 
@@ -73,6 +74,7 @@ end
 function updateGame(dt)	
 
 	--print(gameState:peek())
+	local frameScroll = 0
 
 	if getKeyPress("escape") then 
 		love.event.quit()
@@ -86,9 +88,12 @@ function updateGame(dt)
 	if gameState:peek() == GAME_STATES.title then 
 		updateTitle(dt)
 	elseif gameState:peek() == GAME_STATES.walking then 
-		updateWalking(dt)
+		frameScroll = math.floor(200 * dt)
+		updateWalking(dt, frameScroll)
+		updateParticles(dt, frameScroll)
 	elseif gameState:peek() == GAME_STATES.battle then 
 		updateBattle(dt)
+		updateParticles(dt, frameScroll)
 	elseif gameState:peek() == GAME_STATES.paused then 
 		updatePaused(dt)
 	end 
@@ -100,8 +105,8 @@ function updateTitle(dt)
 	end 
 end 
 
-function updateWalking(dt)
-	updateBackground(dt, math.floor(200 * dt))
+function updateWalking(dt, frameScroll)
+	updateBackground(dt, frameScroll)
 	if player.x < tileSize * 5 then 
 		--player.x = player.x + dt * 80 
 		player.x = player.x + (((tileSize*5) - player.x ) * 0.07)
@@ -132,11 +137,12 @@ function updateBattle(dt)
 	if letterInWordPressed(currentWord, currentWordIndex) then 
 		currentWordIndex = currentWordIndex + 1 
 
-		local hitDamage = math.random(1, 3)
+		local hitDamage = math.random(player.baseAttack, player.baseAttack + 4)
 		table.insert(particleList, newParticle(currentEnemyPosition().x, currentEnemyPosition().y, math.random(100, 200), math.random(-250, -550), 3, tostring(hitDamage)))
 		decreaseCurrentEnemyHealth(hitDamage)
 		if currentEnemyHealth() <= 0 then 
-			gameState = GAME_STATES.walking
+			gameState:pop()
+			removeEnemy()
 		end 
 
 		-- if the whole word was typed ...
@@ -154,7 +160,7 @@ function updateBattle(dt)
 		end
 		hit = true 
 	end ]]
-	updateParticles(dt)
+	
 end 
 
 function updatePaused(dt)
@@ -168,8 +174,10 @@ function drawGame()
 		drawTitle()
 	elseif gameState:peek() == GAME_STATES.walking then 
 		drawWalking()
+		drawParticles()
 	elseif gameState:peek() == GAME_STATES.battle then 
 		drawBattle()
+		drawParticles()
 	elseif gameState:peek() == GAME_STATES.paused then 
 		drawPaused()
 	end 
@@ -190,7 +198,7 @@ function drawBattle()
 	drawWord(currentWord, currentWordIndex, 50, 50)
 	drawKeyboard(100, 100)
 	currentWordTimer:draw(10, 10, 100, 20)
-	drawParticles()
+	
 end 
 
 
@@ -230,9 +238,9 @@ function love.focus(f)
 	end
 end
 
-function updateParticles(dt)
+function updateParticles(dt, frameScroll)
 	for i=#particleList,1,-1 do
-		particleList[i].x = particleList[i].x + (particleList[i].vx * dt)
+		particleList[i].x = particleList[i].x + (particleList[i].vx * dt) - frameScroll
 		
 		particleList[i].vy = (particleList[i].vy + gravity) 
 		particleList[i].y = particleList[i].y + (particleList[i].vy * dt)

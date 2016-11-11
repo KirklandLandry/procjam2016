@@ -42,3 +42,12 @@ end
 function Queue:length()
 	return self.last - self.first + 1
 end 
+
+function Queue:getFirst()
+	return self.first
+end 
+
+function Queue:getLast()
+	return self.last
+end 
+

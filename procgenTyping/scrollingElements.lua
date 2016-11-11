@@ -61,7 +61,8 @@ function updateBackground(dt, scrollSpeed)
 		end 
 	end
 
-	for i=1,enemyList:length() do
+	for i=enemyList:getLast(),enemyList:getFirst(),-1 do
+		print(i)
 		enemyList:elementAt(i).x = enemyList:elementAt(i).x - frameScrollAmount
 	end
 
@@ -81,7 +82,7 @@ function drawBackground()
 end 
 
 function drawEnemies()
-	for i=1,enemyList:length() do
+	for i=enemyList:getLast(),enemyList:getFirst(),-1 do
 		love.graphics.setColor(enemyList:elementAt(i).r, enemyList:elementAt(i).g, enemyList:elementAt(i).b)
 		love.graphics.rectangle("fill", enemyList:elementAt(i).x, enemyList:elementAt(i).y, enemyList:elementAt(i).width, enemyList:elementAt(i).height)
 	end
@@ -106,4 +107,8 @@ end
 function decreaseCurrentEnemyHealth(amount)
 	assert(type(amount) == "number", "decreaseCurrentEnemyHealth expects a number")
 	enemyList:peek().health = enemyList:peek().health - amount
+end 
+
+function removeEnemy()
+	enemyList:dequeue()
 end 
