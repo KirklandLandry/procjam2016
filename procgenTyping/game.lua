@@ -115,6 +115,8 @@ function updateWalking(dt, frameScroll)
 	-- if an enemy is 4 tiles away then switch to battle mode
 	if enemyWithinRange(player.x, screenWidth * 0.6 ) then 
 		battleState = BATTLE_STATES.attacking
+		currentWordTimer:reset()
+		newKeyboard()
 		gameState:push(GAME_STATES.battle)
 	end
 end 
@@ -143,6 +145,7 @@ function updateBattle(dt)
 		if currentEnemyHealth() <= 0 then 
 			gameState:pop()
 			removeEnemy()
+			currentWordIndex = 1
 		end 
 
 		-- if the whole word was typed ...
@@ -153,18 +156,11 @@ function updateBattle(dt)
 		end 
 	end 
 
-	-- a particle test 
-	--[[if not hit  then 
-		for i=1,40 do
-			table.insert(particleList, newParticle(player.x, player.y, math.random(-10, -200), math.random(-250, -550), 3))
-		end
-		hit = true 
-	end ]]
-	
 end 
 
 function updatePaused(dt)
-
+	if getKeyDown("q") then love.event.quit() end 
+	if getKeyDown("r") then gameState:pop() end 
 end 
 
 -- BASE DRAW 
