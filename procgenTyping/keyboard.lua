@@ -36,15 +36,6 @@ function getKeyDown(key)
 	return false
 end
 
---[[function getSwappedKeyDown(key)
-	if not keys[key] then 
-		keys[key] = {down = false}
-	elseif keys[key].down then 
-		return true
-	end
-	return false
-end ]]
-
 -- checking if a key is pressed. key will be set as released once checked
 function getKeyPress(key)
 	if not keys[key] then 
@@ -114,6 +105,7 @@ function drawKey(character, x, y, keyboardTopLeft)
 	love.graphics.rectangle("line", keyboardTopLeft.x + (32 * x) + (5*y), keyboardTopLeft.y + (32 * y), 32, 32)
 	colourSet(character)
 	drawText(keyToSwappedMap[character], keyboardTopLeft.x + (32 * x) + (5*y) + 10, keyboardTopLeft.y + (32 * y) + 7)
+	resetColor()
 end 
 
 function drawKeyboard(_x, _y)

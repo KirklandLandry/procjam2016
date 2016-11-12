@@ -41,6 +41,10 @@ function love.draw()
 	drawFramerateLock(false)
 end
 
+function resetColor()
+	love.graphics.setColor(255, 255, 255)
+end 
+
 -------------- additional math functions --------------
 -- Averages an arbitrary number of angles (in radians).
 function math.averageAngles(...)

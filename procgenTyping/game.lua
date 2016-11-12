@@ -65,11 +65,26 @@ function loadGame()
 		y = floorY - tileSize,
 		width = tileSize,
 		height = tileSize,
-		r = math.random(22, 255),
-		g = math.random(22, 255),
-		b = math.random(22, 255),
-		baseAttack = 3
+		baseAttack = 3,
+		tileset = love.graphics.newImage("assets/sprites/32x32spaceshipTileset.png"),
+		tilesetQuads = {},
+		animationTimer = Timer:new(0.3,TimerModes.repeating),
+		animationIndex = 1
 	}
+
+
+	player.tileset = love.graphics.newImage("assets/sprites/32x32spaceshipTileset.png")
+	player.tileset:setFilter("nearest", "nearest")
+
+	local playerTilesetWidth = player.tileset:getWidth()
+	local playerTilesetHeight = player.tileset:getHeight()
+
+	player.tilesetQuads = {}
+	for i=1,4 do
+		player.tilesetQuads[i] = love.graphics.newQuad((i-1)*32, 0, 32, 32, playerTilesetWidth, playerTilesetHeight)	
+	end
+	
+
 end
 
 -- BASE UPDATE 
@@ -120,11 +135,16 @@ function updateWalking(dt, frameScroll)
 		newKeyboard()
 		gameState:push(GAME_STATES.battle)
 	end
+
+	updatePlayer(dt)
 end 
 
 local hit = false
 
 function updateBattle(dt)
+
+	updatePlayer(dt)
+
 	if currentWordTimer:isComplete(dt) then 
 		--love.event.quit()
 		if battleState == BATTLE_STATES.attacking then 
@@ -164,9 +184,18 @@ function updatePaused(dt)
 	if getKeyDown("r") then gameState:pop() end 
 end 
 
+function updatePlayer(dt)
+if player.animationTimer:isComplete(dt) then 
+		player.animationIndex = player.animationIndex + 1 
+		if player.animationIndex > 4 then 
+			player.animationIndex = 1 
+		end 
+	end 
+end 
+
 -- BASE DRAW 
 function drawGame()
-	love.graphics.setColor(255,255,255)
+	resetColor()
 	if gameState:peek() == GAME_STATES.title then 
 		drawTitle()
 	elseif gameState:peek() == GAME_STATES.walking then 
@@ -195,9 +224,9 @@ end
 function drawBattle()
 	drawBackground()
 	drawPlayer()
-	drawWord(currentWord, currentWordIndex, 50, 50)
+	drawWord(currentWord, currentWordIndex, 64, 64)
 	drawKeyboard(100, 100)
-	currentWordTimer:draw(10, 10, 100, 20)
+	currentWordTimer:draw(32, 16, screenWidth - 64, 32)
 	
 end 
 
@@ -208,8 +237,7 @@ end
 
 
 function drawPlayer()
-	love.graphics.setColor(player.r, player.g, player.b)
-	love.graphics.rectangle("fill", player.x, player.y, player.width, player.height)
+	love.graphics.draw(player.tileset, player.tilesetQuads[player.animationIndex], player.x, player.y)
 end 
 
 -- not super sure where to stick this 
@@ -218,14 +246,15 @@ function drawWord(wordToDraw, lettersTyped, x, y)
 	local counter = 1
 	for c in wordToDraw:gmatch"." do
 		if lettersTyped <= counter then 
-			love.graphics.setColor(0, 255, 0)
+			love.graphics.setColor(255, 255, 255)
 		else 
-			love.graphics.setColor(255, 100, 0)
+			love.graphics.setColor(150, 150, 150)
 		end 
 		-- need to change this to sprite -> 10 becomes tileSize
 		drawText(c, x + (counter * 16), y)
 		counter = counter + 1
 	end
+	resetColor()
 end 
 
 
@@ -268,6 +297,7 @@ function drawParticles()
 			love.graphics.circle("fill",particleList[i].x, particleList[i].y, 5) 
 		end 
 	end
+	resetColor()
 end
 
 

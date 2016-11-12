@@ -8,7 +8,6 @@ local enemyList = nil
 local enemySpawnTimer = nil 
 
 
--- http://opengameart.org/content/32x32-black-and-white-platformer-tiles
 local backgroundTileset = nil 
 local backgroundTilesetQuads = nil
 
@@ -27,15 +26,13 @@ function newEnemy()
 		y = floorY - tileSize,
 		width = tileSize,
 		height = tileSize,
-		r = math.random(10, 255),
-		g = math.random(10, 255),
-		b = math.random(10, 255),
 		health = 25
 	}
 end 
 
 function initBackground()
 
+	-- http://opengameart.org/content/32x32-black-and-white-platformer-tiles
 	backgroundTileset = love.graphics.newImage("assets/sprites/32x32backgroundTiles.png")
 	backgroundTileset:setFilter("nearest", "nearest")
 
@@ -105,7 +102,6 @@ end
 
 function drawEnemies()
 	for i=enemyList:getLast(),enemyList:getFirst(),-1 do
-		love.graphics.setColor(enemyList:elementAt(i).r, enemyList:elementAt(i).g, enemyList:elementAt(i).b)
 		love.graphics.rectangle("fill", enemyList:elementAt(i).x, enemyList:elementAt(i).y, enemyList:elementAt(i).width, enemyList:elementAt(i).height)
 	end
 end 
