@@ -1,6 +1,7 @@
 
 local scrollingQueues = {
-	floorTiles = nil 
+	floorTiles = nil,
+	pillars = nil
 }
 
 local enemyList = nil
@@ -18,6 +19,12 @@ function newScrollingElement(_x, _y, _tileIndex)
 		y = _y,
 		tileIndex = _tileIndex
 	}
+end
+
+function addPillar()
+	for i=1,8 do 
+		scrollingQueues.pillars:enqueue(newScrollingElement(screenWidth, (i-1)*32, 1))
+	end 
 end
 
 function newEnemy()
@@ -44,17 +51,19 @@ function initBackground()
 	backgroundTilesetQuads = {}
 	backgroundTilesetQuads.floor = {}
 	
+	backgroundTilesetQuads.pillar = love.graphics.newQuad(32, 64, 32, 32, backgroundTilesetWidth, backgroundTilesetHeight)	
+
 	for i=1,3 do
 		backgroundTilesetQuads.floor[i] = love.graphics.newQuad((i-1)*32, 96, 32, 32, backgroundTilesetWidth, backgroundTilesetHeight)	
 	end
 	
-
+	scrollingQueues.pillars = Queue:new()
 
 
 	scrollingQueues.floorTiles = Queue:new()
 	enemyList = Queue:new()
 
-	enemySpawnTimer = Timer:new(1, TimerModes.repeating)
+	enemySpawnTimer = Timer:new(1, TimerModes.single)
 
 	for i=1,(screenWidth/tileSize) + 2 do
 		scrollingQueues.floorTiles:enqueue(newScrollingElement((i-1)*tileSize, floorY, math.random(1,3)))
@@ -67,6 +76,8 @@ function updateBackground(dt, scrollSpeed)
 
 	if enemySpawnTimer:isComplete(dt) then 
 		enemyList:enqueue(newEnemy())
+		enemySpawnTimer.timerMax = math.random(2, 4)
+		enemySpawnTimer:reset()
 	end 
 
 	-- scroll the floor tiles. always ensure the legnth stays the same 
@@ -75,14 +86,27 @@ function updateBackground(dt, scrollSpeed)
 		local temp = scrollingQueues.floorTiles:dequeue()
 		temp.x = temp.x - frameScrollAmount 
 		if temp.x > -tileSize then 
+			-- keep drawing the element by re-enqueueing it
 			scrollingQueues.floorTiles:enqueue(temp)
 		else 
+			-- don't re-enqueue the old tile, add a new one 
 			scrollingQueues.floorTiles:enqueue(newScrollingElement((length*tileSize) + temp.x, floorY, math.random(1,3)))
+			-- maybe add a pillar?
+			if math.random(0,100) > 87 then 
+				addPillar()
+			end 
 		end 
 	end
 
+	-- update enemy positions 
 	for i=enemyList:getLast(),enemyList:getFirst(),-1 do
 		enemyList:elementAt(i).x = enemyList:elementAt(i).x - frameScrollAmount
+	end
+
+	-- update background pillars
+
+	for i=scrollingQueues.pillars:getLast(),scrollingQueues.pillars:getFirst(),-1 do
+		scrollingQueues.pillars:elementAt(i).x = scrollingQueues.pillars:elementAt(i).x - frameScrollAmount
 	end
 
 end 
@@ -92,11 +116,15 @@ function drawBackground()
 	local length = scrollingQueues.floorTiles:length()
 	for i=1,length do
 		local temp = scrollingQueues.floorTiles:dequeue()
-		--love.graphics.rectangle("fill", temp.x, temp.y, tileSize, tileSize)
 		love.graphics.draw(backgroundTileset, backgroundTilesetQuads.floor[temp.tileIndex], temp.x, temp.y)
-
 		scrollingQueues.floorTiles:enqueue(temp)
 	end
+
+	for i=scrollingQueues.pillars:getLast(),scrollingQueues.pillars:getFirst(),-1 do
+		--scrollingQueues.pillars:elementAt(i).x = scrollingQueues.pillars:elementAt(i).x - frameScrollAmount
+		love.graphics.draw(backgroundTileset, backgroundTilesetQuads.pillar, scrollingQueues.pillars:elementAt(i).x, scrollingQueues.pillars:elementAt(i).y)
+	end
+
 	drawEnemies()
 end 
 

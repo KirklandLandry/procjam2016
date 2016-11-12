@@ -224,7 +224,18 @@ end
 function drawBattle()
 	drawBackground()
 	drawPlayer()
-	drawWord(currentWord, currentWordIndex, 64, 64)
+	
+	-- draw the current word with a black box behind it
+	local top = 64 
+	local left = 192
+	love.graphics.setColor(200, 200, 200)
+	love.graphics.rectangle("line", left-8, top-8, #currentWord * 16 +16, 16 +16)
+	love.graphics.setColor(0,0,0)
+	love.graphics.rectangle("fill", left-8, top-8, #currentWord * 16 +16, 16 +16)
+	resetColor()
+	drawWord(currentWord, currentWordIndex, left, top)
+	
+
 	drawKeyboard(100, 100)
 	currentWordTimer:draw(32, 16, screenWidth - 64, 32)
 	
@@ -248,10 +259,10 @@ function drawWord(wordToDraw, lettersTyped, x, y)
 		if lettersTyped <= counter then 
 			love.graphics.setColor(255, 255, 255)
 		else 
-			love.graphics.setColor(150, 150, 150)
+			love.graphics.setColor(120, 120, 120)
 		end 
 		-- need to change this to sprite -> 10 becomes tileSize
-		drawText(c, x + (counter * 16), y)
+		drawText(c, x + ((counter-1) * 16), y)
 		counter = counter + 1
 	end
 	resetColor()
@@ -261,7 +272,9 @@ end
 
 function love.focus(f)
 	if not f then
-		gameState:push(GAME_STATES.paused)
+		if gameState:peek() ~= GAME_STATES.title then 
+			gameState:push(GAME_STATES.paused)
+		end 
 	elseif gameState:peek() == GAME_STATES.paused then 
 		gameState:pop() 
 	end
@@ -334,8 +347,6 @@ function initText()
     	end 
     	
     end
-
-
 
 end 
 

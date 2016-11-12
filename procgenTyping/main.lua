@@ -26,7 +26,7 @@ function love.load(arg)
 	loadFramerateLock()
 
 	-- confine mouse to window
-	love.mouse.setGrabbed(true)
+	--love.mouse.setGrabbed(true)
 	-- set mouse to invisible 
 	love.mouse.setVisible(false)
 end
