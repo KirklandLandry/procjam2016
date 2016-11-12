@@ -7,13 +7,17 @@ local enemyList = nil
 
 local enemySpawnTimer = nil 
 
-function newScrollingElement(_x, _y)
+
+-- http://opengameart.org/content/32x32-black-and-white-platformer-tiles
+local backgroundTileset = nil 
+local backgroundTilesetQuads = nil
+
+
+function newScrollingElement(_x, _y, _tileIndex)
 	return {
 		x = _x, 
 		y = _y,
-		r = math.random(10, 255),
-		g = math.random(10, 255),
-		b = math.random(10, 255)
+		tileIndex = _tileIndex
 	}
 end
 
@@ -31,13 +35,32 @@ function newEnemy()
 end 
 
 function initBackground()
+
+	backgroundTileset = love.graphics.newImage("assets/sprites/32x32backgroundTiles.png")
+	backgroundTileset:setFilter("nearest", "nearest")
+
+	local backgroundTilesetWidth = backgroundTileset:getWidth()
+	local backgroundTilesetHeight = backgroundTileset:getHeight()
+
+	print(backgroundTilesetWidth, backgroundTilesetHeight)
+
+	backgroundTilesetQuads = {}
+	backgroundTilesetQuads.floor = {}
+	
+	for i=1,3 do
+		backgroundTilesetQuads.floor[i] = love.graphics.newQuad((i-1)*32, 96, 32, 32, backgroundTilesetWidth, backgroundTilesetHeight)	
+	end
+	
+
+
+
 	scrollingQueues.floorTiles = Queue:new()
 	enemyList = Queue:new()
 
 	enemySpawnTimer = Timer:new(1, TimerModes.repeating)
 
 	for i=1,(screenWidth/tileSize) + 2 do
-		scrollingQueues.floorTiles:enqueue(newScrollingElement((i-1)*tileSize, floorY))
+		scrollingQueues.floorTiles:enqueue(newScrollingElement((i-1)*tileSize, floorY, math.random(1,3)))
 	end
 end 
 
@@ -57,15 +80,13 @@ function updateBackground(dt, scrollSpeed)
 		if temp.x > -tileSize then 
 			scrollingQueues.floorTiles:enqueue(temp)
 		else 
-			scrollingQueues.floorTiles:enqueue(newScrollingElement((length*tileSize) + temp.x,floorY))
+			scrollingQueues.floorTiles:enqueue(newScrollingElement((length*tileSize) + temp.x, floorY, math.random(1,3)))
 		end 
 	end
 
 	for i=enemyList:getLast(),enemyList:getFirst(),-1 do
-		print(i)
 		enemyList:elementAt(i).x = enemyList:elementAt(i).x - frameScrollAmount
 	end
-
 
 end 
 
@@ -74,8 +95,9 @@ function drawBackground()
 	local length = scrollingQueues.floorTiles:length()
 	for i=1,length do
 		local temp = scrollingQueues.floorTiles:dequeue()
-		love.graphics.setColor(temp.r, temp.g, temp.b)
-		love.graphics.rectangle("fill", temp.x, temp.y, tileSize, tileSize)
+		--love.graphics.rectangle("fill", temp.x, temp.y, tileSize, tileSize)
+		love.graphics.draw(backgroundTileset, backgroundTilesetQuads.floor[temp.tileIndex], temp.x, temp.y)
+
 		scrollingQueues.floorTiles:enqueue(temp)
 	end
 	drawEnemies()

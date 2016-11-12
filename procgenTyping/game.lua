@@ -58,7 +58,7 @@ function loadGame()
 	
 	initBackground()
 
-	initKeyboard()
+	initText()
 
 	player = {
 		x = -tileSize, 
@@ -263,7 +263,6 @@ function drawParticles()
 	for i=1,#particleList do
 		love.graphics.setColor(255, 255, 255, particleList[i].alpha)
 		if particleList[i].text then 
-			--love.graphics.print(, 0, 2, 2)
 			drawText(particleList[i].text, particleList[i].x, particleList[i].y)
 		else 
 			love.graphics.circle("fill",particleList[i].x, particleList[i].y, 5) 
@@ -279,7 +278,7 @@ end
 local textTileset = nil 
 local textTilesetQuads = nil
 
-function initKeyboard()
+function initText()
 	textTileset = love.graphics.newImage("assets/sprites/16x16PixelFont.png")
 	textTileset:setFilter("nearest", "nearest")
 
