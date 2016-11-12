@@ -58,6 +58,8 @@ function loadGame()
 	
 	initBackground()
 
+	initKeyboard()
+
 	player = {
 		x = -tileSize, 
 		y = floorY - tileSize,
@@ -73,7 +75,6 @@ end
 -- BASE UPDATE 
 function updateGame(dt)	
 
-	--print(gameState:peek())
 	local frameScroll = 0
 
 	if getKeyPress("escape") then 
@@ -180,7 +181,10 @@ function drawGame()
 end
 
 function drawTitle()
-	love.graphics.print("press r to start", screenWidth/2, screenHeight/2)
+	drawText("just type attack to attack", 32, 32)
+	drawText("pretty easy huh", 32, 64)
+	drawText("press r to start", 32, 96)
+	--drawText("0123456789", 32, 64)
 end 
 
 function drawWalking()
@@ -199,7 +203,7 @@ end
 
 
 function drawPaused()
-	love.graphics.print("game paused", screenWidth/2, screenHeight/2)
+	drawText("game paused", 32, 32)
 end 
 
 
@@ -219,7 +223,7 @@ function drawWord(wordToDraw, lettersTyped, x, y)
 			love.graphics.setColor(255, 100, 0)
 		end 
 		-- need to change this to sprite -> 10 becomes tileSize
-		love.graphics.print(c, x + (counter * 10), y)
+		drawText(c, x + (counter * 16), y)
 		counter = counter + 1
 	end
 end 
@@ -241,9 +245,9 @@ function updateParticles(dt, frameScroll)
 		particleList[i].vy = (particleList[i].vy + gravity) 
 		particleList[i].y = particleList[i].y + (particleList[i].vy * dt)
 
-		if particleList[i].y > floorY then 
+		if particleList[i].y + 16 > floorY then 
 			particleList[i].alpha = particleList[i].alpha* 0.75
-			particleList[i].y = floorY
+			particleList[i].y = floorY - 16
 			particleList[i].vy = -particleList[i].vy * particleList[i].e
 		end
 
@@ -259,9 +263,62 @@ function drawParticles()
 	for i=1,#particleList do
 		love.graphics.setColor(255, 255, 255, particleList[i].alpha)
 		if particleList[i].text then 
-			love.graphics.print(particleList[i].text, particleList[i].x, particleList[i].y, 0, 2, 2)
+			--love.graphics.print(, 0, 2, 2)
+			drawText(particleList[i].text, particleList[i].x, particleList[i].y)
 		else 
 			love.graphics.circle("fill",particleList[i].x, particleList[i].y, 5) 
 		end 
 	end
 end
+
+
+
+
+
+-- make a sprite class if I had time 
+local textTileset = nil 
+local textTilesetQuads = nil
+
+function initKeyboard()
+	textTileset = love.graphics.newImage("assets/sprites/16x16PixelFont.png")
+	textTileset:setFilter("nearest", "nearest")
+
+	local tilesetWidth = textTileset:getWidth()
+	local tilesetHeight = textTileset:getHeight()
+
+	textTilesetQuads = {}
+
+	textTilesetQuads[" "] = love.graphics.newQuad(0, 32, 16, 16, tilesetWidth, tilesetHeight)
+
+    local counter = 0
+    for i=string.byte("a"),string.byte("z") do
+    	textTilesetQuads[string.char(i)] = love.graphics.newQuad(counter * 16, 0, 16, 16, tilesetWidth, tilesetHeight)
+    	counter = counter + 1
+    end
+
+    -- map numbers 
+    for i=1,10 do
+    	if i == 10 then 
+    		textTilesetQuads[tostring(0)] = love.graphics.newQuad((26*16) + ((i-1)*16), 0, 16, 16, tilesetWidth, tilesetHeight)
+    	else 
+			textTilesetQuads[tostring(i)] = love.graphics.newQuad((26*16) + ((i-1)*16), 0, 16, 16, tilesetWidth, tilesetHeight)
+    	end 
+    	
+    end
+
+
+
+end 
+
+function drawText(word, x, y)
+	local counter = 0
+	for c in word:gmatch"." do
+		love.graphics.draw(textTileset, textTilesetQuads[c], x + (counter*16), y)
+		counter = counter + 1
+	end
+end 
+
+
+
+
+

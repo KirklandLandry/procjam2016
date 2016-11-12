@@ -12,6 +12,8 @@ local topRow = "qwertyuiop"
 local secondRow = "asdfghjkl"
 local thirdRow = "zxcvbnm"
 
+
+
 -- key press callback
 function love.keypressed(key)
 	print(key, string.byte(key), keyToSwappedMap[key])
@@ -104,12 +106,12 @@ end
 
 
 function drawKey(character, x, y, keyboardTopLeft)	
-	love.graphics.setColor(0, 0, 200)
-	love.graphics.rectangle("fill", keyboardTopLeft.x + (20 * x) + (5*y), keyboardTopLeft.y + (20 * y), 20, 20)
-	love.graphics.setColor(0, 0, 150)
-	love.graphics.rectangle("line", keyboardTopLeft.x + (20 * x) + (5*y), keyboardTopLeft.y + (20 * y), 20, 20)
+	love.graphics.setColor(50, 50, 50)
+	love.graphics.rectangle("fill", keyboardTopLeft.x + (32 * x) + (5*y), keyboardTopLeft.y + (32 * y), 32, 32)
+	love.graphics.setColor(100, 100, 100)
+	love.graphics.rectangle("line", keyboardTopLeft.x + (32 * x) + (5*y), keyboardTopLeft.y + (32 * y), 32, 32)
 	colourSet(character)
-	love.graphics.print(keyToSwappedMap[character], keyboardTopLeft.x + (20 * x) + (5*y) + 5, keyboardTopLeft.y + (20 * y) + 5)	
+	drawText(keyToSwappedMap[character], keyboardTopLeft.x + (32 * x) + (5*y) + 10, keyboardTopLeft.y + (32 * y) + 7)
 end 
 
 function drawKeyboard(_x, _y)
