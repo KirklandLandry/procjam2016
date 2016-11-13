@@ -1,13 +1,16 @@
 
 local scrollingQueues = {
 	floorTiles = nil,
-	pillars = nil
+	pillars = nil,
+	pillarsParallax = nil
 }
 
 local enemyList = nil
 
 local enemySpawnTimer = nil 
 
+local pillarSpawnChance = 87
+local parralaxPillarSpawnChance = 85
 
 local backgroundTileset = nil 
 local backgroundTilesetQuads = nil
@@ -17,13 +20,27 @@ function newScrollingElement(_x, _y, _tileIndex)
 	return {
 		x = _x, 
 		y = _y,
-		tileIndex = _tileIndex
+		tileIndex = _tileIndex,
+		r = 255,
+		g = 255,
+		b = 255,
+		scrollmodifier = 1 -- for different scroll speeds. 
 	}
 end
 
-function addPillar()
+function addPillar(scrollMod)
+	local val = math.random(15, 130)
 	for i=1,8 do 
-		scrollingQueues.pillars:enqueue(newScrollingElement(screenWidth, (i-1)*32, 1))
+		local temp = newScrollingElement(screenWidth, (i-1)*32, 1)
+		temp.scrollmodifier = scrollMod or 1
+		if scrollMod then 
+			temp.r = val
+			temp.g = val
+			temp.b = val
+			scrollingQueues.pillarsParallax:enqueue(temp)
+		else 
+			scrollingQueues.pillars:enqueue(temp)
+		end 
 	end 
 end
 
@@ -58,7 +75,7 @@ function initBackground()
 	end
 	
 	scrollingQueues.pillars = Queue:new()
-
+	scrollingQueues.pillarsParallax = Queue:new()
 
 	scrollingQueues.floorTiles = Queue:new()
 	enemyList = Queue:new()
@@ -84,7 +101,7 @@ function updateBackground(dt, scrollSpeed)
 	local length = scrollingQueues.floorTiles:length()
 	for i=1,length do
 		local temp = scrollingQueues.floorTiles:dequeue()
-		temp.x = temp.x - frameScrollAmount 
+		temp.x = temp.x - frameScrollAmount
 		if temp.x > -tileSize then 
 			-- keep drawing the element by re-enqueueing it
 			scrollingQueues.floorTiles:enqueue(temp)
@@ -92,8 +109,11 @@ function updateBackground(dt, scrollSpeed)
 			-- don't re-enqueue the old tile, add a new one 
 			scrollingQueues.floorTiles:enqueue(newScrollingElement((length*tileSize) + temp.x, floorY, math.random(1,3)))
 			-- maybe add a pillar?
-			if math.random(0,100) > 87 then 
+			if math.random(0,100) > pillarSpawnChance then 
 				addPillar()
+			end 
+			if math.random(0,100) > parralaxPillarSpawnChance then 
+				addPillar(math.random(40,70)/100)
 			end 
 		end 
 	end
@@ -104,9 +124,12 @@ function updateBackground(dt, scrollSpeed)
 	end
 
 	-- update background pillars
-
 	for i=scrollingQueues.pillars:getLast(),scrollingQueues.pillars:getFirst(),-1 do
-		scrollingQueues.pillars:elementAt(i).x = scrollingQueues.pillars:elementAt(i).x - frameScrollAmount
+		scrollingQueues.pillars:elementAt(i).x = scrollingQueues.pillars:elementAt(i).x - (frameScrollAmount * scrollingQueues.pillars:elementAt(i).scrollmodifier)
+	end
+
+	for i=scrollingQueues.pillarsParallax:getLast(),scrollingQueues.pillarsParallax:getFirst(),-1 do
+		scrollingQueues.pillarsParallax:elementAt(i).x = scrollingQueues.pillarsParallax:elementAt(i).x - (frameScrollAmount * scrollingQueues.pillarsParallax:elementAt(i).scrollmodifier)
 	end
 
 end 
@@ -120,10 +143,18 @@ function drawBackground()
 		scrollingQueues.floorTiles:enqueue(temp)
 	end
 
+	for i=scrollingQueues.pillarsParallax:getLast(),scrollingQueues.pillarsParallax:getFirst(),-1 do
+		local temp = scrollingQueues.pillarsParallax:elementAt(i)
+		love.graphics.setColor(temp.r, temp.g, temp.b)
+		love.graphics.draw(backgroundTileset, backgroundTilesetQuads.pillar, temp.x, temp.y)
+	end
+
 	for i=scrollingQueues.pillars:getLast(),scrollingQueues.pillars:getFirst(),-1 do
-		--scrollingQueues.pillars:elementAt(i).x = scrollingQueues.pillars:elementAt(i).x - frameScrollAmount
+		resetColor()	
 		love.graphics.draw(backgroundTileset, backgroundTilesetQuads.pillar, scrollingQueues.pillars:elementAt(i).x, scrollingQueues.pillars:elementAt(i).y)
 	end
+
+	
 
 	drawEnemies()
 end 
