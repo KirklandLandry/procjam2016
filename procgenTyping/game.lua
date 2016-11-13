@@ -13,19 +13,20 @@ local battleState = nil
 
 local currentWord = "attack"
 local currentWordIndex = 1
-local currentWordTime = 5.5
+local currentWordTime = 6
 local currentWordTimer = nil
 
 -- for screenshake when you get hit 
 local screenShakeTimer = nil 
+local screenShake = false
 local screenshakeBounds = {
 	min = {
-		x = -10,
-		y = -10
+		x = -5,
+		y = -5
 	},
 	max = {
-		x = 10,
-		y = 10
+		x = 5,
+		y = 5
 	}	
 }
 
@@ -61,7 +62,9 @@ function loadGame()
 
 	newKeyboard()
 	currentWordTimer = Timer:new(currentWordTime, TimerModes.single)
-	
+	setCurrentWord("attack")
+	battleState = BATTLE_STATES.attacking
+
 	initBackground()
 
 	initText()
@@ -92,8 +95,13 @@ function loadGame()
 		player.tilesetQuads[i] = love.graphics.newQuad((i-1)*32, 0, 32, 32, playerTilesetWidth, playerTilesetHeight)	
 	end
 	
-
+	screenShake = false 
+	screenShakeTimer = nil
 end
+
+function restartGame()
+	loadGame()
+end 
 
 -- BASE UPDATE 
 function updateGame(dt)	
@@ -122,7 +130,10 @@ function updateGame(dt)
 	elseif gameState:peek() == GAME_STATES.paused then 
 		updatePaused(dt)
 	elseif gameState:peek() == GAME_STATES.gameOver then 
-
+		frameScroll = math.floor(200 * dt)
+		updateWalking(dt, frameScroll)
+		updateParticles(dt, frameScroll)
+		updateGameOver(dt)
 	end 
 end
 
@@ -169,11 +180,16 @@ function updateBattle(dt)
 			setCurrentWord("block")
 		elseif battleState == BATTLE_STATES.blocking then 
 			-- if it got here then the player didn't fully type out block
+			screenShakeTimer = Timer:new(0.3, TimerModes.single)
+			screenShake = true 
 			local hitDamage = currentEnemyGetAttackDamage() + (currentEnemyGetAttackDamage() * 0.5 * (#currentWord - (currentWordIndex-1)))
 			print(tostring(hitDamage))
 			table.insert(particleList, newParticle(player.x, player.y, math.random(-100, -200), math.random(-250, -550), 3, tostring(hitDamage)))
 			player.health = player.health - hitDamage
 			if player.health <= 0 then 
+				for i=1,40 do
+					table.insert(particleList, newParticle(player.x, player.y, math.random(-250, 250), math.random(-250, -550), 3, "dead"))
+				end
 				gameState:push(GAME_STATES.gameOver)
 				return
 			end 
@@ -208,15 +224,21 @@ function updateBattle(dt)
 			if battleState == BATTLE_STATES.attacking then 
 				currentWordTimer:reset()
 				battleState = BATTLE_STATES.blocking
+				setCurrentWord("block")
 			-- if the whole word was typed, player takes no damage
 			elseif battleState == BATTLE_STATES.blocking then 
 				table.insert(particleList, newParticle(player.x, player.y, math.random(-100, -200), math.random(-250, -550), 3, tostring(0)))
 				currentWordTimer:reset()
 				battleState = BATTLE_STATES.attacking
+				setCurrentWord("attack")
 			end 
-			setCurrentWord("attack")
 			newKeyboard()
 		end 
+	end 
+
+	if screenShake and screenShakeTimer:isComplete(dt) then 
+		print("screenshake done")
+		screenShake = false
 	end 
 
 end 
@@ -226,8 +248,15 @@ function updatePaused(dt)
 	if getKeyDown("r") then gameState:pop() end 
 end 
 
+function updateGameOver(dt)
+	if getKeyDown("q") then love.event.quit() end 
+	if getKeyDown("r") then 
+		restartGame()
+	end 
+end 
+
 function updatePlayer(dt)
-if player.animationTimer:isComplete(dt) then 
+	if player.animationTimer:isComplete(dt) then 
 		player.animationIndex = player.animationIndex + 1 
 		if player.animationIndex > 4 then 
 			player.animationIndex = 1 
@@ -244,12 +273,18 @@ function drawGame()
 		drawWalking()
 		drawParticles()
 	elseif gameState:peek() == GAME_STATES.battle then 
+		if screenShake then 
+			love.graphics.origin()
+			love.graphics.translate(math.random(screenshakeBounds.min.x, screenshakeBounds.max.x), math.random(screenshakeBounds.min.y, screenshakeBounds.max.y))
+		end 
 		drawBattle()
 		drawParticles()
 	elseif gameState:peek() == GAME_STATES.paused then 
 		drawPaused()
 	elseif gameState:peek() == GAME_STATES.gameOver then 
-
+		drawWalking()
+		drawParticles()
+		drawGameOver()
 	end 
 end
 
@@ -257,8 +292,8 @@ function drawTitle()
 	drawText("just type attack to attack", 32, 32)
 	drawText("and block to block", 32, 64)
 	drawText("pretty easy huh?", 32, 96)
-	drawText("press r to start", 32, 128)
-	--drawText("0123456789", 32, 64)
+	drawText("press esc in game to pause", 32, 128)
+	drawText("press r to start", 32, 160)
 end 
 
 function drawWalking()
@@ -296,6 +331,11 @@ function drawPaused()
 	drawText("press q to quit", 32, 96)
 end 
 
+function drawGameOver()
+	drawText("game over", 32, 32)
+	drawText("press r to restart", 32, 64)
+	drawText("press q to quit", 32, 96)
+end 
 
 function drawPlayer()
 	love.graphics.draw(player.tileset, player.tilesetQuads[player.animationIndex], player.x, player.y)
@@ -329,7 +369,7 @@ end
 
 function love.focus(f)
 	if not f then
-		if gameState:peek() ~= GAME_STATES.title then 
+		if gameState:peek() ~= GAME_STATES.title or gameState:peek() ~= GAME_STATES.gameOver then 
 			gameState:push(GAME_STATES.paused)
 		end 
 	elseif gameState:peek() == GAME_STATES.paused then 
