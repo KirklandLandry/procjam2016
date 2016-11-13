@@ -80,7 +80,7 @@ function initBackground()
 	scrollingQueues.floorTiles = Queue:new()
 	enemyList = Queue:new()
 
-	enemySpawnTimer = Timer:new(1, TimerModes.single)
+	enemySpawnTimer = Timer:new(math.random(1,3), TimerModes.single)
 
 	for i=1,(screenWidth/tileSize) + 2 do
 		scrollingQueues.floorTiles:enqueue(newScrollingElement((i-1)*tileSize, floorY, math.random(1,3)))
@@ -93,7 +93,7 @@ function updateBackground(dt, scrollSpeed)
 
 	if enemySpawnTimer:isComplete(dt) then 
 		enemyList:enqueue(newEnemy())
-		enemySpawnTimer.timerMax = math.random(2, 4)
+		enemySpawnTimer.timerMax = math.random(2, 7)
 		enemySpawnTimer:reset()
 	end 
 
@@ -154,7 +154,7 @@ function drawBackground()
 		love.graphics.draw(backgroundTileset, backgroundTilesetQuads.pillar, scrollingQueues.pillars:elementAt(i).x, scrollingQueues.pillars:elementAt(i).y)
 	end
 
-	
+	resetColor()	
 
 	drawEnemies()
 end 
