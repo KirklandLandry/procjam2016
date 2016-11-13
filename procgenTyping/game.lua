@@ -1,23 +1,11 @@
 
--- parallel universe typing simulator 2016
--- or "keyboard warrior"
+-- keyboard warrior
 
--- TODO 
--- make it so that you only use half of the keyboard 
--- disable keys that aren't being used 
--- make it so that in each string you only hit a key once 
--- key lights up once it's been hit 
--- add a bar that fills up as you complete the word 
+-- maybe have it with variation for battle mode
 
--- the game will be like a 2D shootout type of thing 
--- all particle effects will be gravity applied 
--- when you get hit the damage number flies off you like a particle
+-- for block have a single letter appear -> 1 second to block each letter attack
 
--- maybe have a set of letters 
--- try to type as many as you can in the given time 
--- more letters typed means a stronger attack 
-
-local GAME_STATES = {battle = "battle", walking = "walking", paused = "paused", title = "title"}
+local GAME_STATES = {battle = "battle", walking = "walking", paused = "paused", title = "title", gameOver = "gameOver"}
 local BATTLE_STATES = {attacking = "attacking", blocking = "blocking"}
 
 local gameState = nil
@@ -25,14 +13,32 @@ local battleState = nil
 
 local currentWord = "attack"
 local currentWordIndex = 1
-
+local currentWordTime = 5.5
 local currentWordTimer = nil
+
+-- for screenshake when you get hit 
+local screenShakeTimer = nil 
+local screenshakeBounds = {
+	min = {
+		x = -10,
+		y = -10
+	},
+	max = {
+		x = 10,
+		y = 10
+	}	
+}
 
 local player = nil 
 
 local particleList = {} 
 
 local gravity = 22
+
+function setCurrentWord(newWord)
+	currentWord = newWord 
+	currentWordIndex = 1
+end 
 
 -- the text is optional 
 -- will create normal particle otherwise 
@@ -54,7 +60,7 @@ function loadGame()
 	gameState:push(GAME_STATES.title)
 
 	newKeyboard()
-	currentWordTimer = Timer:new(7, TimerModes.single)
+	currentWordTimer = Timer:new(currentWordTime, TimerModes.single)
 	
 	initBackground()
 
@@ -65,7 +71,9 @@ function loadGame()
 		y = floorY - tileSize,
 		width = tileSize,
 		height = tileSize,
-		baseAttack = 3,
+		baseAttack = 1,
+		health = 25,
+		maxHealth = 25,
 		tileset = love.graphics.newImage("assets/sprites/32x32spaceshipTileset.png"),
 		tilesetQuads = {},
 		animationTimer = Timer:new(0.3,TimerModes.repeating),
@@ -93,11 +101,12 @@ function updateGame(dt)
 	local frameScroll = 0
 
 	if getKeyPress("escape") then 
-		love.event.quit()
 		if gameState:peek() == GAME_STATES.paused then 
 			gameState:pop()	
 		else 
-			gameState:push(GAME_STATES.paused)
+			if gameState:peek() ~= GAME_STATES.title and gameState:peek() ~= GAME_STATES.gameOver then 
+				gameState:push(GAME_STATES.paused)
+			end 
 		end 
 	end 
 
@@ -112,6 +121,8 @@ function updateGame(dt)
 		updateParticles(dt, frameScroll)
 	elseif gameState:peek() == GAME_STATES.paused then 
 		updatePaused(dt)
+	elseif gameState:peek() == GAME_STATES.gameOver then 
+
 	end 
 end
 
@@ -119,6 +130,9 @@ function updateTitle(dt)
 	if getKeyDown("r") then 
 		gameState:push(GAME_STATES.walking)
 	end 
+	--[[if getKeyDown("q") then 
+		love.events.quit()
+	end ]]
 end 
 
 function updateWalking(dt, frameScroll)
@@ -129,7 +143,7 @@ function updateWalking(dt, frameScroll)
 	end 
 
 	-- if an enemy is 4 tiles away then switch to battle mode
-	if enemyWithinRange(player.x, screenWidth * 0.6 ) then 
+	if enemyWithinRange(player.x, screenWidth * 0.6 ) and gameState:peek() ~= GAME_STATES.gameOver then 
 		battleState = BATTLE_STATES.attacking
 		currentWordTimer:reset()
 		newKeyboard()
@@ -139,8 +153,8 @@ function updateWalking(dt, frameScroll)
 	updatePlayer(dt)
 end 
 
-local hit = false
 
+-- clean this up, it's messy
 function updateBattle(dt)
 
 	updatePlayer(dt)
@@ -148,32 +162,60 @@ function updateBattle(dt)
 	if currentWordTimer:isComplete(dt) then 
 		--love.event.quit()
 		if battleState == BATTLE_STATES.attacking then 
+			if currentWordIndex == 1 then 
+				table.insert(particleList, newParticle(currentEnemyPosition().x, currentEnemyPosition().y, math.random(100, 200), math.random(-250, -550), 3, tostring(0)))
+			end 
 			battleState = BATTLE_STATES.blocking
+			setCurrentWord("block")
 		elseif battleState == BATTLE_STATES.blocking then 
+			-- if it got here then the player didn't fully type out block
+			local hitDamage = currentEnemyGetAttackDamage() + (currentEnemyGetAttackDamage() * 0.5 * (#currentWord - (currentWordIndex-1)))
+			print(tostring(hitDamage))
+			table.insert(particleList, newParticle(player.x, player.y, math.random(-100, -200), math.random(-250, -550), 3, tostring(hitDamage)))
+			player.health = player.health - hitDamage
+			if player.health <= 0 then 
+				gameState:push(GAME_STATES.gameOver)
+				return
+			end 
 			battleState = BATTLE_STATES.attacking
+			setCurrentWord("attack")
 		end 
 		newKeyboard()
-		currentWordTimer = Timer:new(7, TimerModes.single)
+		currentWordTimer = Timer:new(currentWordTime, TimerModes.single)
 	end 
 
 	-- check if the current letter in the current word was typed 
 	if letterInWordPressed(currentWord, currentWordIndex) then 
 		currentWordIndex = currentWordIndex + 1 
 
-		local hitDamage = math.random(player.baseAttack, player.baseAttack + 4)
-		table.insert(particleList, newParticle(currentEnemyPosition().x, currentEnemyPosition().y, math.random(100, 200), math.random(-250, -550), 3, tostring(hitDamage)))
-		decreaseCurrentEnemyHealth(hitDamage)
-		if currentEnemyHealth() <= 0 then 
-			gameState:pop()
-			removeEnemy()
-			currentWordIndex = 1
+		if battleState == BATTLE_STATES.attacking then 
+			local hitDamage = math.random(player.baseAttack, player.baseAttack + 3)
+			table.insert(particleList, newParticle(currentEnemyPosition().x, currentEnemyPosition().y, math.random(100, 200), math.random(-250, -550), 3, tostring(hitDamage)))
+			decreaseCurrentEnemyHealth(hitDamage)
+			-- enemy defeated, battle over 
+			if currentEnemyHealth() <= 0 then 
+				gameState:pop()
+				removeEnemy()
+				setCurrentWord("attack")
+				--player.health = player.maxHealth
+			end 
+		elseif battleState == BATTLE_STATES.blocking then 
+
 		end 
 
 		-- if the whole word was typed ...
 		if currentWordIndex > #currentWord then 
-			currentWordIndex = 1
-			--newKeyboard()
-			--currentWordTimer = Timer:new(13, TimerModes.single)
+			if battleState == BATTLE_STATES.attacking then 
+				currentWordTimer:reset()
+				battleState = BATTLE_STATES.blocking
+			-- if the whole word was typed, player takes no damage
+			elseif battleState == BATTLE_STATES.blocking then 
+				table.insert(particleList, newParticle(player.x, player.y, math.random(-100, -200), math.random(-250, -550), 3, tostring(0)))
+				currentWordTimer:reset()
+				battleState = BATTLE_STATES.attacking
+			end 
+			setCurrentWord("attack")
+			newKeyboard()
 		end 
 	end 
 
@@ -206,19 +248,24 @@ function drawGame()
 		drawParticles()
 	elseif gameState:peek() == GAME_STATES.paused then 
 		drawPaused()
+	elseif gameState:peek() == GAME_STATES.gameOver then 
+
 	end 
 end
 
 function drawTitle()
 	drawText("just type attack to attack", 32, 32)
-	drawText("pretty easy huh", 32, 64)
-	drawText("press r to start", 32, 96)
+	drawText("and block to block", 32, 64)
+	drawText("pretty easy huh?", 32, 96)
+	drawText("press r to start", 32, 128)
 	--drawText("0123456789", 32, 64)
 end 
 
 function drawWalking()
 	drawBackground()
-	drawPlayer()
+	if gameState:peek() ~= GAME_STATES.gameOver then 
+		drawPlayer()
+	end 
 end 
 
 function drawBattle()
@@ -236,19 +283,29 @@ function drawBattle()
 	drawWord(currentWord, currentWordIndex, left, top)
 	
 
-	drawKeyboard(100, 100)
+	drawKeyboard(96, 96)
 	currentWordTimer:draw(32, 16, screenWidth - 64, 32)
 	
+	drawHealthBar(8, 96, 32, 96, player.health, player.maxHealth)
+	drawHealthBar(screenWidth - 8 - 32, 96, 32, 96, currentEnemyHealth(), currentEnemyMaxHealth())
 end 
-
 
 function drawPaused()
 	drawText("game paused", 32, 32)
+	drawText("press esc to resume", 32, 64)
+	drawText("press q to quit", 32, 96)
 end 
 
 
 function drawPlayer()
 	love.graphics.draw(player.tileset, player.tilesetQuads[player.animationIndex], player.x, player.y)
+end 
+
+-- vertical bar
+function drawHealthBar(x, y, width, height, value, maxValue)
+	local timerPercentComplete = value / maxValue
+	love.graphics.rectangle("line", x, y, width, height)
+	love.graphics.rectangle("fill", x, y + height, width, y - height - (height * timerPercentComplete))
 end 
 
 -- not super sure where to stick this 
@@ -331,6 +388,10 @@ function initText()
 	textTilesetQuads = {}
 
 	textTilesetQuads[" "] = love.graphics.newQuad(0, 32, 16, 16, tilesetWidth, tilesetHeight)
+
+	textTilesetQuads["."] = love.graphics.newQuad((26*16) + ((1)*16), 16, 16, 16, tilesetWidth, tilesetHeight)
+	textTilesetQuads["?"] = love.graphics.newQuad((26*16) + ((2)*16), 16, 16, 16, tilesetWidth, tilesetHeight)
+
 
     local counter = 0
     for i=string.byte("a"),string.byte("z") do

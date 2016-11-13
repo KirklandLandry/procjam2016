@@ -50,7 +50,10 @@ function newEnemy()
 		y = floorY - tileSize,
 		width = tileSize,
 		height = tileSize,
-		health = 25
+		health = 25,
+		maxHealth = 25,
+		baseAttack = 1,
+		attackRange = 2
 	}
 end 
 
@@ -90,7 +93,6 @@ end
 function updateBackground(dt, scrollSpeed)
 	local frameScrollAmount = math.floor(scrollSpeed)
 
-
 	if enemySpawnTimer:isComplete(dt) then 
 		enemyList:enqueue(newEnemy())
 		enemySpawnTimer.timerMax = math.random(2, 7)
@@ -124,6 +126,8 @@ function updateBackground(dt, scrollSpeed)
 	end
 
 	-- update background pillars
+	-- currently not being removed if it goes off screen (bad!)
+	-- low priority for now, fix later
 	for i=scrollingQueues.pillars:getLast(),scrollingQueues.pillars:getFirst(),-1 do
 		scrollingQueues.pillars:elementAt(i).x = scrollingQueues.pillars:elementAt(i).x - (frameScrollAmount * scrollingQueues.pillars:elementAt(i).scrollmodifier)
 	end
@@ -179,6 +183,14 @@ end
 
 function currentEnemyHealth()
 	return enemyList:peek().health
+end 
+
+function currentEnemyMaxHealth()
+	return enemyList:peek().maxHealth
+end 
+
+function currentEnemyGetAttackDamage()
+	return math.random(enemyList:peek().baseAttack, enemyList:peek().baseAttack + enemyList:peek().attackRange)
 end 
 
 function decreaseCurrentEnemyHealth(amount)
