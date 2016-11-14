@@ -16,6 +16,9 @@ local currentWordIndex = 1
 local currentWordTime = 6
 local currentWordTimer = nil
 
+-- keep track of enemies defeated and show it on game over screen 
+local enemiesDefeated = 0 
+
 -- for screenshake when you get hit 
 local screenShakeTimer = nil 
 local screenShake = false
@@ -64,6 +67,8 @@ function loadGame()
 	currentWordTimer = Timer:new(currentWordTime, TimerModes.single)
 	setCurrentWord("attack")
 	battleState = BATTLE_STATES.attacking
+
+	enemiesDefeated = 0 
 
 	initBackground()
 
