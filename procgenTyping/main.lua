@@ -5,6 +5,7 @@ require "keyboard"
 require "queue"
 require "scrollingElements"
 require "stack"
+require "sound"
 -- this is the actual physical window size 
 screenWidth = nil
 screenHeight = nil

@@ -16,6 +16,18 @@ local currentWordIndex = 1
 local currentWordTime = 6
 local currentWordTimer = nil
 
+local audiopath = "assets/audio/"
+local sounds ={
+	enemyHit = audiopath.."hitEnemy.wav",
+	block = {
+		audiopath.."block1.wav",
+		audiopath.."block2.wav",
+		audiopath.."block3.wav",
+		audiopath.."block4.wav",
+		audiopath.."block5.wav"
+	}
+}
+
 -- keep track of enemies defeated and show it on game over screen 
 local enemiesDefeated = 0 
 
@@ -210,6 +222,7 @@ function updateBattle(dt)
 		currentWordIndex = currentWordIndex + 1 
 
 		if battleState == BATTLE_STATES.attacking then 
+			love.audio.play(sounds.enemyHit)
 			local hitDamage = math.random(player.baseAttack, player.baseAttack + 3)
 			table.insert(particleList, newParticle(currentEnemyPosition().x, currentEnemyPosition().y, math.random(100, 200), math.random(-250, -550), 3, tostring(hitDamage)))
 			decreaseCurrentEnemyHealth(hitDamage)
@@ -221,7 +234,7 @@ function updateBattle(dt)
 				--player.health = player.maxHealth
 			end 
 		elseif battleState == BATTLE_STATES.blocking then 
-
+			love.audio.play(sounds.block[currentWordIndex-1])
 		end 
 
 		-- if the whole word was typed ...
