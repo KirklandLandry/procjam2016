@@ -19,6 +19,8 @@ local currentWordTimer = nil
 local audiopath = "assets/audio/"
 local sounds ={
 	enemyHit = audiopath.."hitEnemy.wav",
+	playerHit = audiopath.."playerHit.wav",
+	death = audiopath.."death.wav",
 	block = {
 		audiopath.."block1.wav",
 		audiopath.."block2.wav",
@@ -129,7 +131,7 @@ function updateGame(dt)
 		if gameState:peek() == GAME_STATES.paused then 
 			gameState:pop()	
 		else 
-			if gameState:peek() ~= GAME_STATES.title and gameState:peek() ~= GAME_STATES.gameOver then 
+			if gameState:peek() == GAME_STATES.walking or gameState:peek() == GAME_STATES.battle then 
 				gameState:push(GAME_STATES.paused)
 			end 
 		end 
@@ -179,6 +181,7 @@ function updateWalking(dt, frameScroll)
 	end
 
 	updatePlayer(dt)
+	updateEnemyAnimation(dt)
 end 
 
 
@@ -187,6 +190,10 @@ function updateBattle(dt)
 
 	updatePlayer(dt)
 
+	
+	updateEnemyAnimation(dt)
+	
+	
 	if currentWordTimer:isComplete(dt) then 
 		--love.event.quit()
 		if battleState == BATTLE_STATES.attacking then 
@@ -197,17 +204,16 @@ function updateBattle(dt)
 			setCurrentWord("block")
 		elseif battleState == BATTLE_STATES.blocking then 
 			-- if it got here then the player didn't fully type out block
+			love.audio.play(sounds.playerHit)
 			screenShakeTimer = Timer:new(0.3, TimerModes.single)
 			screenShake = true 
 			local hitDamage = currentEnemyGetAttackDamage() + (currentEnemyGetAttackDamage() * 0.5 * (#currentWord - (currentWordIndex-1)))
-			print(tostring(hitDamage))
 			table.insert(particleList, newParticle(player.x, player.y, math.random(-100, -200), math.random(-250, -550), 3, tostring(hitDamage)))
 			player.health = player.health - hitDamage
 			if player.health <= 0 then 
-				for i=1,40 do
-					table.insert(particleList, newParticle(player.x, player.y, math.random(-250, 250), math.random(-250, -550), 3, "dead"))
-				end
+				deathParticleExplosion(player.x, player.y)
 				gameState:push(GAME_STATES.gameOver)
+				love.audio.play(sounds.death)
 				return
 			end 
 			battleState = BATTLE_STATES.attacking
@@ -228,6 +234,8 @@ function updateBattle(dt)
 			decreaseCurrentEnemyHealth(hitDamage)
 			-- enemy defeated, battle over 
 			if currentEnemyHealth() <= 0 then 
+				deathParticleExplosion(currentEnemyPosition().x, currentEnemyPosition().y)
+				love.audio.play(sounds.death)
 				gameState:pop()
 				removeEnemy()
 				setCurrentWord("attack")
@@ -255,10 +263,16 @@ function updateBattle(dt)
 	end 
 
 	if screenShake and screenShakeTimer:isComplete(dt) then 
-		print("screenshake done")
+		--print("screenshake done")
 		screenShake = false
 	end 
 
+end 
+
+function deathParticleExplosion(x, y)
+	for i=1,40 do
+		table.insert(particleList, newParticle(x, y, math.random(-250, 250), math.random(-250, -550), 3, "dead"))
+	end
 end 
 
 function updatePaused(dt)
@@ -387,7 +401,7 @@ end
 
 function love.focus(f)
 	if not f then
-		if gameState:peek() ~= GAME_STATES.title or gameState:peek() ~= GAME_STATES.gameOver then 
+		if  gameState:peek() == GAME_STATES.walking or gameState:peek() == GAME_STATES.battle then 
 			gameState:push(GAME_STATES.paused)
 		end 
 	elseif gameState:peek() == GAME_STATES.paused then 

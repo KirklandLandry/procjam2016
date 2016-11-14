@@ -6,8 +6,10 @@ local scrollingQueues = {
 }
 
 local enemyList = nil
-
 local enemySpawnTimer = nil 
+local enemyTileset = nil 
+local enemyQuads = nil 
+
 
 local pillarSpawnChance = 87
 local parralaxPillarSpawnChance = 85
@@ -53,7 +55,9 @@ function newEnemy()
 		health = 25,
 		maxHealth = 25,
 		baseAttack = 1,
-		attackRange = 2
+		attackRange = 2,
+		animationTimer = Timer:new(0.3,TimerModes.repeating),
+		animationIndex = 1
 	}
 end 
 
@@ -66,7 +70,7 @@ function initBackground()
 	local backgroundTilesetWidth = backgroundTileset:getWidth()
 	local backgroundTilesetHeight = backgroundTileset:getHeight()
 
-	print(backgroundTilesetWidth, backgroundTilesetHeight)
+	--print(backgroundTilesetWidth, backgroundTilesetHeight)
 
 	backgroundTilesetQuads = {}
 	backgroundTilesetQuads.floor = {}
@@ -87,6 +91,20 @@ function initBackground()
 
 	for i=1,(screenWidth/tileSize) + 2 do
 		scrollingQueues.floorTiles:enqueue(newScrollingElement((i-1)*tileSize, floorY, math.random(1,3)))
+	end
+	
+
+	
+	-- setting up enemy sprites 
+	enemyTileset = love.graphics.newImage("assets/sprites/32x32enemy1SpriteSheet.png")
+	enemyTileset:setFilter("nearest", "nearest")
+
+	local enemyTilesetWidth = enemyTileset:getWidth()
+	local enemyTilesetHeight = enemyTileset:getHeight()
+
+	enemyQuads = {}
+	for i=1,4 do
+		enemyQuads[i] = love.graphics.newQuad((i-1)*32, 0, 32, 32, enemyTilesetWidth, enemyTilesetHeight)	
 	end
 end 
 
@@ -163,9 +181,21 @@ function drawBackground()
 	drawEnemies()
 end 
 
+function updateEnemyAnimation(dt)
+	for i=enemyList:getLast(),enemyList:getFirst(),-1 do
+		if enemyList:elementAt(i).animationTimer:isComplete(dt) then 
+			enemyList:elementAt(i).animationIndex = enemyList:elementAt(i).animationIndex + 1 
+			if enemyList:elementAt(i).animationIndex > 4 then 
+				enemyList:elementAt(i).animationIndex = 1 
+			end 
+		end 
+	end
+end 
+
 function drawEnemies()
 	for i=enemyList:getLast(),enemyList:getFirst(),-1 do
-		love.graphics.rectangle("fill", enemyList:elementAt(i).x, enemyList:elementAt(i).y, enemyList:elementAt(i).width, enemyList:elementAt(i).height)
+		--love.graphics.rectangle("fill", x,, enemyList:elementAt(i).width, enemyList:elementAt(i).height)
+		love.graphics.draw(enemyTileset, enemyQuads[enemyList:elementAt(i).animationIndex], enemyList:elementAt(i).x, enemyList:elementAt(i).y)
 	end
 end 
 
