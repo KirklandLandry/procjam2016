@@ -54,8 +54,8 @@ function newEnemy()
 		height = tileSize,
 		health = 25,
 		maxHealth = 25,
-		baseAttack = 1,
-		attackRange = 2,
+		baseAttack = 6,
+		attackRange = 6,
 		animationTimer = Timer:new(0.3,TimerModes.repeating),
 		animationIndex = 1
 	}
@@ -146,12 +146,25 @@ function updateBackground(dt, scrollSpeed)
 	-- update background pillars
 	-- currently not being removed if it goes off screen (bad!)
 	-- low priority for now, fix later
-	for i=scrollingQueues.pillars:getLast(),scrollingQueues.pillars:getFirst(),-1 do
-		scrollingQueues.pillars:elementAt(i).x = scrollingQueues.pillars:elementAt(i).x - (frameScrollAmount * scrollingQueues.pillars:elementAt(i).scrollmodifier)
-	end
-
-	for i=scrollingQueues.pillarsParallax:getLast(),scrollingQueues.pillarsParallax:getFirst(),-1 do
-		scrollingQueues.pillarsParallax:elementAt(i).x = scrollingQueues.pillarsParallax:elementAt(i).x - (frameScrollAmount * scrollingQueues.pillarsParallax:elementAt(i).scrollmodifier)
+	
+	length = scrollingQueues.pillars:length()
+	for i=1,length do
+		local temp = scrollingQueues.pillars:dequeue()
+		temp.x = temp.x - frameScrollAmount
+		if temp.x > -tileSize then 
+			-- keep drawing the element by re-enqueueing it
+			scrollingQueues.pillars:enqueue(temp)
+		end 
+	end	
+	
+	length = scrollingQueues.pillarsParallax:length()
+	for i=1,length do
+		local temp = scrollingQueues.pillarsParallax:dequeue()
+		temp.x = temp.x - (frameScrollAmount * temp.scrollmodifier)
+		if temp.x > -tileSize then 
+			-- keep drawing the element by re-enqueueing it
+			scrollingQueues.pillarsParallax:enqueue(temp)
+		end 
 	end
 
 end 

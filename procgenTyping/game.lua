@@ -1,8 +1,5 @@
-
 -- keyboard warrior
-
 -- maybe have it with variation for battle mode
-
 -- for block have a single letter appear -> 1 second to block each letter attack
 
 local GAME_STATES = {battle = "battle", walking = "walking", paused = "paused", title = "title", gameOver = "gameOver"}
@@ -16,11 +13,15 @@ local currentWordIndex = 1
 local currentWordTime = 6
 local currentWordTimer = nil
 
+
+local backgroundMusicPlaying = false
+
 local audiopath = "assets/audio/"
 local sounds ={
 	enemyHit = audiopath.."hitEnemy.wav",
 	playerHit = audiopath.."playerHit.wav",
 	death = audiopath.."death.wav",
+	backgroundMusic = audiopath.."backgroundMusic.wav",
 	block = {
 		audiopath.."block1.wav",
 		audiopath.."block2.wav",
@@ -87,7 +88,8 @@ function loadGame()
 	initBackground()
 
 	initText()
-
+	
+	
 	player = {
 		x = -tileSize, 
 		y = floorY - tileSize,
@@ -158,6 +160,10 @@ end
 
 function updateTitle(dt)
 	if getKeyDown("r") then 
+		if not backgroundMusicPlaying then 
+		backgroundMusicPlaying = true 
+			love.audio.play(sounds.backgroundMusic, "stream", true)
+		end 
 		gameState:push(GAME_STATES.walking)
 	end 
 	--[[if getKeyDown("q") then 
@@ -207,7 +213,7 @@ function updateBattle(dt)
 			love.audio.play(sounds.playerHit)
 			screenShakeTimer = Timer:new(0.3, TimerModes.single)
 			screenShake = true 
-			local hitDamage = currentEnemyGetAttackDamage() + (currentEnemyGetAttackDamage() * 0.5 * (#currentWord - (currentWordIndex-1)))
+			local hitDamage = currentEnemyGetAttackDamage() * ((#currentWord - (currentWordIndex-1)) / #currentWord)
 			table.insert(particleList, newParticle(player.x, player.y, math.random(-100, -200), math.random(-250, -550), 3, tostring(hitDamage)))
 			player.health = player.health - hitDamage
 			if player.health <= 0 then 
@@ -234,6 +240,7 @@ function updateBattle(dt)
 			decreaseCurrentEnemyHealth(hitDamage)
 			-- enemy defeated, battle over 
 			if currentEnemyHealth() <= 0 then 
+				enemiesDefeated = enemiesDefeated + 1
 				deathParticleExplosion(currentEnemyPosition().x, currentEnemyPosition().y)
 				love.audio.play(sounds.death)
 				gameState:pop()
@@ -365,8 +372,9 @@ end
 
 function drawGameOver()
 	drawText("game over", 32, 32)
-	drawText("press r to restart", 32, 64)
-	drawText("press q to quit", 32, 96)
+	drawText("defeated: "..tostring(enemiesDefeated).."!", 32, 64)
+	drawText("press r to restart", 32, 96)
+	drawText("press q to quit", 32, 128)
 end 
 
 function drawPlayer()
@@ -463,7 +471,8 @@ function initText()
 
 	textTilesetQuads["."] = love.graphics.newQuad((26*16) + ((1)*16), 16, 16, 16, tilesetWidth, tilesetHeight)
 	textTilesetQuads["?"] = love.graphics.newQuad((26*16) + ((2)*16), 16, 16, 16, tilesetWidth, tilesetHeight)
-
+	textTilesetQuads[":"] = love.graphics.newQuad((26*16), 48, 16, 16, tilesetWidth, tilesetHeight)
+	textTilesetQuads["!"] = love.graphics.newQuad((26*16), 16, 16, 16, tilesetWidth, tilesetHeight)
 
     local counter = 0
     for i=string.byte("a"),string.byte("z") do
